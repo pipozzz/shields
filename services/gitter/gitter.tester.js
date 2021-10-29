@@ -1,10 +1,7 @@
-'use strict'
+import { createServiceTester } from '../tester.js'
+export const t = await createServiceTester()
 
-const t = (module.exports = require('../tester').createServiceTester())
-
-t.create('on gitter')
-  .get('/nwjs/nw.js.json')
-  .expectBadge({
-    label: 'chat',
-    message: 'on gitter',
-  })
+t.create('on gitter').get('/nwjs/nw.js.json').expectBadge({
+  label: 'chat',
+  message: 'on gitter',
+})

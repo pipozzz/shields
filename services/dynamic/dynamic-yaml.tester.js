@@ -1,6 +1,5 @@
-'use strict'
-
-const t = (module.exports = require('../tester').createServiceTester())
+import { createServiceTester } from '../tester.js'
+export const t = await createServiceTester()
 
 t.create('No URL specified')
   .get('.json?query=$.name&label=Package Name')
@@ -100,4 +99,15 @@ t.create('YAML from url | error color overrides user specified')
     label: 'custom badge',
     message: 'invalid query parameter: url',
     color: 'red',
+  })
+
+t.create('YAML contains a string')
+  .get('.json?url=https://example.test/yaml&query=$.foo,')
+  .intercept(nock =>
+    nock('https://example.test').get('/yaml').reply(200, '"foo"')
+  )
+  .expectBadge({
+    label: 'custom badge',
+    message: 'resource must contain an object or array',
+    color: 'lightgrey',
   })

@@ -1,52 +1,43 @@
-'use strict'
-
-const SonarBase = require('./sonar-base')
-const {
+import SonarBase from './sonar-base.js'
+import {
   negativeMetricColorScale,
   getLabel,
   documentation,
   keywords,
   queryParamSchema,
-} = require('./sonar-helpers')
+} from './sonar-helpers.js'
 
-module.exports = class SonarTechDebt extends SonarBase {
-  static get category() {
-    return 'analysis'
+export default class SonarTechDebt extends SonarBase {
+  static category = 'analysis'
+
+  static route = {
+    base: 'sonar',
+    pattern: ':metric(tech_debt|sqale_debt_ratio)/:component/:branch*',
+    queryParamSchema,
   }
 
-  static get route() {
-    return {
-      base: 'sonar',
-      pattern: ':metric(tech_debt|sqale_debt_ratio)/:component',
-      queryParamSchema,
-    }
-  }
-
-  static get examples() {
-    return [
-      {
-        title: 'Sonar Tech Debt',
-        namedParams: {
-          component: 'org.ow2.petals:petals-se-ase',
-          metric: 'tech_debt',
-        },
-        queryParams: {
-          server: 'http://sonar.petalslink.com',
-          sonarVersion: '4.2',
-        },
-        staticPreview: this.render({
-          debt: 1,
-          metric: 'tech_debt',
-        }),
-        keywords,
-        documentation,
+  static examples = [
+    {
+      title: 'Sonar Tech Debt',
+      namedParams: {
+        component: 'org.ow2.petals:petals-se-ase',
+        metric: 'tech_debt',
+        branch: 'master',
       },
-    ]
-  }
+      queryParams: {
+        server: 'http://sonar.petalslink.com',
+        sonarVersion: '4.2',
+      },
+      staticPreview: this.render({
+        debt: 1,
+        metric: 'tech_debt',
+      }),
+      keywords,
+      documentation,
+    },
+  ]
 
-  static get defaultBadgeData() {
-    return { label: 'tech debt' }
-  }
+  static defaultBadgeData = { label: 'tech debt' }
 
   static render({ debt, metric }) {
     return {
@@ -56,11 +47,12 @@ module.exports = class SonarTechDebt extends SonarBase {
     }
   }
 
-  async handle({ component, metric }, { server, sonarVersion }) {
+  async handle({ component, metric, branch }, { server, sonarVersion }) {
     const json = await this.fetch({
       sonarVersion,
       server,
       component,
+      branch,
       // Special condition for backwards compatibility.
       metricName: 'sqale_debt_ratio',
     })

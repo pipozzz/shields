@@ -1,7 +1,5 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const { BaseJsonService, NotFound } = require('..')
+import Joi from 'joi'
+import { BaseJsonService, NotFound } from '../index.js'
 
 const latestBuildSchema = Joi.object({
   count: Joi.number().required(),
@@ -14,18 +12,22 @@ const latestBuildSchema = Joi.object({
     .required(),
 }).required()
 
-module.exports = class AzureDevOpsBase extends BaseJsonService {
-  static get auth() {
-    return { passKey: 'azure_devops_token' }
+export default class AzureDevOpsBase extends BaseJsonService {
+  static auth = {
+    passKey: 'azure_devops_token',
+    authorizedOrigins: ['https://dev.azure.com'],
+    defaultToEmptyStringForUser: true,
   }
 
   async fetch({ url, options, schema, errorMessages }) {
-    return this._requestJson({
-      schema,
-      url,
-      options,
-      errorMessages,
-    })
+    return this._requestJson(
+      this.authHelper.withBasicAuth({
+        schema,
+        url,
+        options,
+        errorMessages,
+      })
+    )
   }
 
   async getLatestCompletedBuildId(
@@ -33,7 +35,6 @@ module.exports = class AzureDevOpsBase extends BaseJsonService {
     project,
     definitionId,
     branch,
-    auth,
     errorMessages
   ) {
     // Microsoft documentation: https://docs.microsoft.com/en-us/rest/api/azure/devops/build/builds/list?view=azure-devops-rest-5.0
@@ -45,7 +46,6 @@ module.exports = class AzureDevOpsBase extends BaseJsonService {
         statusFilter: 'completed',
         'api-version': '5.0-preview.4',
       },
-      auth,
     }
 
     if (branch) {

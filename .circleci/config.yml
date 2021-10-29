@@ -4,12 +4,6 @@ main_steps: &main_steps
   steps:
     - checkout
 
-    - restore_cache:
-        keys:
-          - v2-dependencies-{{ checksum "package-lock.json" }}
-          # https://github.com/badges/shields/issues/1937
-          - v2-dependencies-
-
     - run:
         name: Install dependencies
         command: npm ci
@@ -17,11 +11,6 @@ main_steps: &main_steps
           # https://docs.cypress.io/guides/getting-started/installing-cypress.html#Skipping-installation
           # We don't need to install the Cypress binary in jobs that aren't actually running Cypress.
           CYPRESS_INSTALL_BINARY: 0
-
-    - save_cache:
-        paths:
-          - node_modules
-        key: v2-dependencies-{{ checksum "package-lock.json" }}
 
     - run:
         name: Linter
@@ -56,12 +45,6 @@ integration_steps: &integration_steps
   steps:
     - checkout
 
-    - restore_cache:
-        keys:
-          - v2-dependencies-{{ checksum "package-lock.json" }}
-          # https://github.com/badges/shields/issues/1937
-          - v2-dependencies-
-
     - run:
         name: Install dependencies
         command: npm ci
@@ -83,12 +66,6 @@ services_steps: &services_steps
   steps:
     - checkout
 
-    - restore_cache:
-        keys:
-          - v2-dependencies-{{ checksum "package-lock.json" }}
-          # https://github.com/badges/shields/issues/1937
-          - v2-dependencies-
-
     - run:
         name: Install dependencies
         command: npm ci
@@ -104,137 +81,91 @@ services_steps: &services_steps
         environment:
           mocha_reporter: mocha-junit-reporter
           MOCHA_FILE: junit/services/results.xml
-        command: npm run test:services:pr:run
+        command: RETRY_COUNT=3 npm run test:services:pr:run
 
     - store_test_results:
         path: junit
-
-run_package_tests: &run_package_tests
-  when: always
-  command: |
-    # https://discuss.circleci.com/t/switch-nodejs-version-on-machine-executor-solved/26675/3
-    set +e
-    export NVM_DIR="/opt/circleci/.nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-    nvm install $NODE_VERSION
-    nvm use $NODE_VERSION
-    node --version
-    npm run test:package
 
 package_steps: &package_steps
   steps:
     - checkout
 
-    - restore_cache:
-        keys:
-          - v2-dependencies-{{ checksum "package-lock.json" }}
-          # https://github.com/badges/shields/issues/1937
-          - v2-dependencies-
-
     - run:
-        name: Install dependencies
+        name: Install node and npm
         command: |
           set +e
           export NVM_DIR="/opt/circleci/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-          nvm install v12
-          nvm use v12
+          nvm install v14
+          nvm use v14
           npm install -g npm
-          npm ci
-        environment:
-          CYPRESS_INSTALL_BINARY: 0
 
     # Run the package tests on each currently supported node version. See:
-    # https://github.com/badges/shields/blob/master/gh-badges/README.md#node-version-support
+    # https://github.com/badges/shields/blob/master/badge-maker/README.md#node-version-support
+    # https://nodejs.org/en/about/releases/
 
     - run:
-        <<: *run_package_tests
         environment:
           mocha_reporter: mocha-junit-reporter
-          MOCHA_FILE: junit/gh-badges/v8/results.xml
-          NODE_VERSION: v8
-        name: Run package tests on Node 8
-
-    - run:
-        <<: *run_package_tests
-        environment:
-          mocha_reporter: mocha-junit-reporter
-          MOCHA_FILE: junit/gh-badges/v10/results.xml
-          NODE_VERSION: v10
-        name: Run package tests on Node 10
-
-    - run:
-        <<: *run_package_tests
-        environment:
-          mocha_reporter: mocha-junit-reporter
-          MOCHA_FILE: junit/gh-badges/v12/results.xml
+          MOCHA_FILE: junit/badge-maker/v12/results.xml
           NODE_VERSION: v12
+          CYPRESS_INSTALL_BINARY: 0
         name: Run package tests on Node 12
+        command: scripts/run_package_tests.sh
+
+    - run:
+        environment:
+          mocha_reporter: mocha-junit-reporter
+          MOCHA_FILE: junit/badge-maker/v14/results.xml
+          NODE_VERSION: v14
+          CYPRESS_INSTALL_BINARY: 0
+        name: Run package tests on Node 14
+        command: scripts/run_package_tests.sh
+
+    - run:
+        environment:
+          mocha_reporter: mocha-junit-reporter
+          MOCHA_FILE: junit/badge-maker/v16/results.xml
+          NODE_VERSION: v16
+          CYPRESS_INSTALL_BINARY: 0
+        name: Run package tests on Node 16
+        command: scripts/run_package_tests.sh
 
     - store_test_results:
         path: junit
 
 jobs:
-  npm-install:
-    docker:
-      - image: circleci/node:8
-    steps:
-      - checkout
-
-      - restore_cache:
-          keys:
-            - v2-dependencies-{{ checksum "package-lock.json" }}
-            # fallback to using the latest cache if no exact match is found
-            - v2-dependencies-
-
-      - run:
-          name: Install dependencies
-          command: npm ci
-          environment:
-            CYPRESS_INSTALL_BINARY: 0
-
-      - save_cache:
-          paths:
-            - node_modules
-          key: v2-dependencies-{{ checksum "package-lock.json" }}
-
   main:
     docker:
-      - image: circleci/node:8
+      - image: circleci/node:14
 
     <<: *main_steps
 
-  main@node-latest:
+  main@node-16:
     docker:
-      - image: circleci/node:latest
+      - image: circleci/node:16
 
     <<: *main_steps
 
   integration:
     docker:
-      - image: circleci/node:8
+      - image: circleci/node:14
       - image: redis
 
     <<: *integration_steps
 
-  integration@node-latest:
+  integration@node-16:
     docker:
-      - image: circleci/node:latest
+      - image: circleci/node:16
       - image: redis
 
     <<: *integration_steps
 
   danger:
     docker:
-      - image: circleci/node:8
+      - image: circleci/node:14
     steps:
       - checkout
-
-      - restore_cache:
-          keys:
-            - v2-dependencies-{{ checksum "package-lock.json" }}
-            # https://github.com/badges/shields/issues/1937
-            - v2-dependencies-
 
       - run:
           name: Install dependencies
@@ -252,15 +183,9 @@ jobs:
 
   frontend:
     docker:
-      - image: circleci/node:8
+      - image: circleci/node:14
     steps:
       - checkout
-
-      - restore_cache:
-          keys:
-            - v2-dependencies-{{ checksum "package-lock.json" }}
-            # https://github.com/badges/shields/issues/1937
-            - v2-dependencies-
 
       - run:
           name: Install dependencies
@@ -299,28 +224,21 @@ jobs:
 
   services:
     docker:
-      - image: circleci/node:8
+      - image: circleci/node:14
 
     <<: *services_steps
 
-  services@node-latest:
+  services@node-16:
     docker:
-      - image: circleci/node:latest
+      - image: circleci/node:16
 
     <<: *services_steps
 
   e2e:
     docker:
-      - image: cypress/base:8
+      - image: cypress/base:14.16.0
     steps:
       - checkout
-
-      - restore_cache:
-          name: Restore node_modules
-          keys:
-            - v2-dependencies-{{ checksum "package-lock.json" }}
-            # https://github.com/badges/shields/issues/1937
-            - v2-dependencies-
 
       - restore_cache:
           name: Restore Cypress binary
@@ -367,11 +285,11 @@ workflows:
           filters:
             branches:
               ignore: gh-pages
-      - main@node-latest:
+      - main@node-16:
           filters:
             branches:
               ignore: gh-pages
-      - integration@node-latest:
+      - integration@node-16:
           filters:
             branches:
               ignore: gh-pages
@@ -389,7 +307,7 @@ workflows:
               ignore:
                 - master
                 - gh-pages
-      - services@node-latest:
+      - services@node-16:
           filters:
             branches:
               ignore:

@@ -1,9 +1,7 @@
-'use strict'
+import { test, given } from 'sazerac'
+import { renderContributorBadge } from './contributor-count.js'
 
-const { test, given } = require('sazerac')
-const { renderContributorBadge } = require('./contributor-count')
-
-describe('Contributor count helpers', function() {
+describe('Contributor count helpers', function () {
   test(renderContributorBadge, () => {
     given({ label: 'maintainers', contributorCount: 1 }).expect({
       label: 'maintainers',

@@ -1,72 +1,82 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const { renderVersionBadge } = require('../version')
-const { compare, isStable, latest } = require('../php-version')
-const {
+import Joi from 'joi'
+import { renderVersionBadge } from '../version.js'
+import { compare, isStable, latest } from '../php-version.js'
+import { optionalUrl } from '../validators.js'
+import { NotFound, redirector } from '../index.js'
+import {
   allVersionsSchema,
   keywords,
   BasePackagistService,
-} = require('./packagist-base')
-const { NotFound } = require('..')
+  customServerDocumentationFragment,
+} from './packagist-base.js'
+
+const packageSchema = Joi.object()
+  .pattern(
+    /^/,
+    Joi.object({
+      version: Joi.string(),
+      extra: Joi.object({
+        'branch-alias': Joi.object().pattern(/^/, Joi.string()),
+      }),
+    }).required()
+  )
+  .required()
 
 const schema = Joi.object({
-  package: Joi.object({
-    versions: Joi.object()
-      .pattern(
-        /^/,
-        Joi.object({
-          version: Joi.string().required(),
-          extra: Joi.object({
-            'branch-alias': Joi.object().pattern(/^/, Joi.string()),
-          }),
-        })
-      )
-      .required(),
-  }).required(),
+  packages: Joi.object().pattern(/^/, packageSchema).required(),
 }).required()
 
-module.exports = class PackagistVersion extends BasePackagistService {
-  static get category() {
-    return 'version'
+const queryParamSchema = Joi.object({
+  server: optionalUrl,
+  include_prereleases: Joi.equal(''),
+}).required()
+
+class PackagistVersion extends BasePackagistService {
+  static category = 'version'
+
+  static route = {
+    base: 'packagist/v',
+    pattern: ':user/:repo',
+    queryParamSchema,
   }
 
-  static get route() {
-    return {
-      base: 'packagist',
-      pattern: ':type(v|vpre)/:user/:repo',
-    }
-  }
-
-  static get examples() {
-    return [
-      {
-        title: 'Packagist Version',
-        pattern: 'v/:user/:repo',
-        namedParams: {
-          user: 'symfony',
-          repo: 'symfony',
-        },
-        staticPreview: renderVersionBadge({ version: '4.2.2' }),
-        keywords,
+  static examples = [
+    {
+      title: 'Packagist Version',
+      namedParams: {
+        user: 'symfony',
+        repo: 'symfony',
       },
-      {
-        title: 'Packagist Pre Release Version',
-        pattern: 'vpre/:user/:repo',
-        namedParams: {
-          user: 'symfony',
-          repo: 'symfony',
-        },
-        staticPreview: renderVersionBadge({ version: '4.3-dev' }),
-        keywords,
+      staticPreview: renderVersionBadge({ version: '4.2.2' }),
+      keywords,
+    },
+    {
+      title: 'Packagist Version (including pre-releases)',
+      namedParams: {
+        user: 'symfony',
+        repo: 'symfony',
       },
-    ]
-  }
+      queryParams: { include_prereleases: null },
+      staticPreview: renderVersionBadge({ version: '4.3-dev' }),
+      keywords,
+    },
+    {
+      title: 'Packagist Version (custom server)',
+      namedParams: {
+        user: 'symfony',
+        repo: 'symfony',
+      },
+      queryParams: {
+        server: 'https://packagist.org',
+      },
+      staticPreview: renderVersionBadge({ version: '4.2.2' }),
+      keywords,
+      documentation: customServerDocumentationFragment,
+    },
+  ]
 
-  static get defaultBadgeData() {
-    return {
-      label: 'packagist',
-    }
+  static defaultBadgeData = {
+    label: 'packagist',
   }
 
   static render({ version }) {
@@ -76,8 +86,8 @@ module.exports = class PackagistVersion extends BasePackagistService {
     return renderVersionBadge({ version })
   }
 
-  transform({ type, json }) {
-    const versionsData = json.package.versions
+  transform({ includePrereleases, json, user, repo }) {
+    const versionsData = json.packages[this.getPackageName(user, repo)]
     let versions = Object.keys(versionsData)
     const aliasesMap = {}
     versions.forEach(version => {
@@ -101,7 +111,7 @@ module.exports = class PackagistVersion extends BasePackagistService {
 
     versions = versions.filter(version => !/^dev-/.test(version))
 
-    if (type === 'vpre') {
+    if (includePrereleases) {
       return { version: latest(versions) }
     } else {
       const stableVersion = latest(versions.filter(isStable))
@@ -109,13 +119,31 @@ module.exports = class PackagistVersion extends BasePackagistService {
     }
   }
 
-  async handle({ type, user, repo }) {
+  async handle(
+    { user, repo },
+    { include_prereleases: includePrereleases, server }
+  ) {
+    includePrereleases = includePrereleases !== undefined
     const json = await this.fetch({
       user,
       repo,
-      schema: type === 'v' ? allVersionsSchema : schema,
+      schema: includePrereleases ? schema : allVersionsSchema,
+      server,
     })
-    const { version } = this.transform({ type, json })
+    const { version } = this.transform({ includePrereleases, json, user, repo })
     return this.constructor.render({ version })
   }
 }
+
+const PackagistVersionRedirector = redirector({
+  category: 'version',
+  route: {
+    base: 'packagist/vpre',
+    pattern: ':user/:repo',
+  },
+  transformPath: ({ user, repo }) => `/packagist/v/${user}/${repo}`,
+  transformQueryParams: params => ({ include_prereleases: null }),
+  dateAdded: new Date('2019-12-15'),
+})
+
+export { PackagistVersion, PackagistVersionRedirector }

@@ -2,5 +2,6 @@
 /build
 /coverage
 /__snapshots__
-/public
-gh-badges/node_modules/
+public
+badge-maker/node_modules/
+!.github/

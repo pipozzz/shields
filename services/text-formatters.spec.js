@@ -1,8 +1,6 @@
-'use strict'
-
-const { test, given } = require('sazerac')
-const sinon = require('sinon')
-const {
+import { test, given } from 'sazerac'
+import sinon from 'sinon'
+import {
   starRating,
   currencyFromCode,
   ordinalNumber,
@@ -12,9 +10,9 @@ const {
   maybePluralize,
   formatDate,
   formatRelativeDate,
-} = require('./text-formatters')
+} from './text-formatters.js'
 
-describe('Text formatters', function() {
+describe('Text formatters', function () {
   test(starRating, () => {
     given(4.9).expect('★★★★★')
     given(3.7).expect('★★★¾☆')
@@ -40,6 +38,7 @@ describe('Text formatters', function() {
   })
 
   test(metric, () => {
+    /* eslint-disable no-loss-of-precision */
     given(999).expect('999')
     given(1000).expect('1k')
     given(1100).expect('1.1k')
@@ -60,6 +59,7 @@ describe('Text formatters', function() {
     given(1100000000000000000000).expect('1.1Z')
     given(2222222222222222222222222).expect('2.2Y')
     given(22222222222222222222222222).expect('22Y')
+    /* eslint-enable */
   })
 
   test(omitv, () => {
@@ -94,12 +94,12 @@ describe('Text formatters', function() {
       .expect('june 2016')
   })
 
-  context('in october', function() {
+  context('in october', function () {
     let clock
-    beforeEach(function() {
+    beforeEach(function () {
       clock = sinon.useFakeTimers(new Date(2017, 9, 15).getTime())
     })
-    afterEach(function() {
+    afterEach(function () {
       clock.restore()
     })
 
@@ -110,12 +110,12 @@ describe('Text formatters', function() {
     })
   })
 
-  context('in october', function() {
+  context('in october', function () {
     let clock
-    beforeEach(function() {
+    beforeEach(function () {
       clock = sinon.useFakeTimers(new Date(2018, 9, 29).getTime())
     })
-    afterEach(function() {
+    afterEach(function () {
       clock.restore()
     })
 

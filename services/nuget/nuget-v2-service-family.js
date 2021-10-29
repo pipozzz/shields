@@ -1,13 +1,16 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const { nonNegativeInteger } = require('../validators')
-const {
+import Joi from 'joi'
+import { nonNegativeInteger } from '../validators.js'
+import {
+  BaseJsonService,
+  BaseXmlService,
+  NotFound,
+  redirector,
+} from '../index.js'
+import {
   renderVersionBadge,
   renderDownloadBadge,
   odataToObject,
-} = require('./nuget-helpers')
-const { BaseJsonService, BaseXmlService, NotFound } = require('..')
+} from './nuget-helpers.js'
 
 function createFilter({ packageName, includePrereleases }) {
   const releaseTypeFilter = includePrereleases
@@ -16,12 +19,14 @@ function createFilter({ packageName, includePrereleases }) {
   return `Id eq '${packageName}' and ${releaseTypeFilter}`
 }
 
+const versionSchema = Joi.alternatives(Joi.string(), Joi.number())
+
 const jsonSchema = Joi.object({
   d: Joi.object({
     results: Joi.array()
       .items(
         Joi.object({
-          Version: Joi.string(),
+          Version: versionSchema,
           NormalizedVersion: Joi.string(),
           DownloadCount: nonNegativeInteger,
         })
@@ -35,13 +40,17 @@ const xmlSchema = Joi.object({
   feed: Joi.object({
     entry: Joi.object({
       'm:properties': Joi.object({
-        'd:Version': Joi.alternatives(Joi.string(), Joi.number()),
+        'd:Version': versionSchema,
         'd:NormalizedVersion': Joi.string(),
         'd:DownloadCount': nonNegativeInteger,
         'd:Tags': Joi.string(),
       }),
     }),
   }).required(),
+}).required()
+
+const queryParamSchema = Joi.object({
+  include_prereleases: Joi.equal(''),
 }).required()
 
 async function fetch(
@@ -117,19 +126,14 @@ function createServiceFamily({
   }
 
   class NugetVersionService extends Base {
-    static get name() {
-      return `${name}Version`
-    }
+    static name = `${name}Version`
 
-    static get category() {
-      return 'version'
-    }
+    static category = 'version'
 
-    static get route() {
-      return {
-        base: serviceBaseUrl,
-        pattern: ':variant(v|vpre)/:packageName',
-      }
+    static route = {
+      base: `${serviceBaseUrl}/v`,
+      pattern: ':packageName',
+      queryParamSchema,
     }
 
     static get examples() {
@@ -137,56 +141,60 @@ function createServiceFamily({
 
       return [
         {
-          title,
-          pattern: 'v/:packageName',
+          title: `${title} Version`,
           namedParams: { packageName: examplePackageName },
           staticPreview: this.render({ version: exampleVersion }),
         },
         {
-          title: `${title} (with prereleases)`,
-          pattern: 'vpre/:packageName',
+          title: `${title} Version (including pre-releases)`,
           namedParams: { packageName: examplePackageName },
+          queryParams: { include_prereleases: null },
           staticPreview: this.render({ version: examplePrereleaseVersion }),
         },
       ]
     }
 
-    static get defaultBadgeData() {
-      return {
-        label: defaultLabel,
-      }
+    static defaultBadgeData = {
+      label: defaultLabel,
     }
 
     static render(props) {
       return renderVersionBadge(props)
     }
 
-    async handle({ variant, packageName }) {
+    async handle({ packageName }, queryParams) {
       const packageData = await fetch(this, {
         odataFormat,
         baseUrl: apiBaseUrl,
         packageName,
-        includePrereleases: variant === 'vpre',
+        includePrereleases: queryParams.include_prereleases !== undefined,
       })
-      const version = packageData.NormalizedVersion || packageData.Version
+      const version = packageData.NormalizedVersion || `${packageData.Version}`
       return this.constructor.render({ version })
     }
   }
 
+  const NugetVersionRedirector = redirector({
+    category: 'version',
+    route: {
+      base: `${serviceBaseUrl}/vpre`,
+      pattern: ':packageName',
+    },
+    transformPath: ({ packageName }) => `/${serviceBaseUrl}/v/${packageName}`,
+    transformQueryParams: params => ({
+      include_prereleases: null,
+    }),
+    dateAdded: new Date('2019-12-15'),
+  })
+
   class NugetDownloadService extends Base {
-    static get name() {
-      return `${name}Downloads`
-    }
+    static name = `${name}Downloads`
 
-    static get category() {
-      return 'downloads'
-    }
+    static category = 'downloads'
 
-    static get route() {
-      return {
-        base: serviceBaseUrl,
-        pattern: 'dt/:packageName',
-      }
+    static route = {
+      base: serviceBaseUrl,
+      pattern: 'dt/:packageName',
     }
 
     static get examples() {
@@ -216,11 +224,7 @@ function createServiceFamily({
     }
   }
 
-  return { NugetVersionService, NugetDownloadService }
+  return { NugetVersionService, NugetVersionRedirector, NugetDownloadService }
 }
 
-module.exports = {
-  createFilter,
-  fetch,
-  createServiceFamily,
-}
+export { createFilter, fetch, createServiceFamily }

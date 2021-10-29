@@ -1,8 +1,7 @@
-'use strict'
+import { noToken } from '../test-helpers.js'
+import { SymfonyInsightBase } from './symfony-insight-base.js'
 
-const runnerConfig = require('config').util.toObject()
-
-const sampleProjectUuid = '45afb680-d4e6-4e66-93ea-bcfa79eb8a87'
+const sampleProjectUuid = '825be328-29f8-44f7-a750-f82818ae9111'
 
 function createMockResponse({ status = 'finished', grade, violations }) {
   let response = `
@@ -38,6 +37,7 @@ const bronzeMockResponse = createMockResponse({
 const noMedalMockResponse = createMockResponse({
   grade: 'none',
 })
+const noGradeMockResponse = createMockResponse({})
 const criticalViolation = createMockResponse({
   violations: [
     {
@@ -80,25 +80,15 @@ const multipleViolations = createMockResponse({
 const user = 'admin'
 const token = 'password'
 const config = {
+  public: { services: {} },
   private: {
     sl_insight_userUuid: user,
     sl_insight_apiToken: token,
   },
 }
+const noSymfonyToken = noToken(SymfonyInsightBase)
 
-function checkShouldSkip() {
-  const noToken =
-    !runnerConfig.private.sl_insight_userUuid ||
-    !runnerConfig.private.sl_insight_apiToken
-  if (noToken) {
-    console.warn(
-      'No Symfony credentials configured. Service tests will be skipped. Add credentials in local.yml to run these tests.'
-    )
-  }
-  return noToken
-}
-
-module.exports = {
+export {
   sampleProjectUuid,
   runningMockResponse,
   platinumMockResponse,
@@ -106,6 +96,7 @@ module.exports = {
   silverMockResponse,
   bronzeMockResponse,
   noMedalMockResponse,
+  noGradeMockResponse,
   criticalViolation,
   majorViolation,
   minorViolation,
@@ -114,5 +105,5 @@ module.exports = {
   user,
   token,
   config,
-  checkShouldSkip,
+  noSymfonyToken,
 }

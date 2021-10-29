@@ -1,15 +1,16 @@
-'use strict'
+import Joi from 'joi'
+import { createServiceTester } from '../tester.js'
+export const t = await createServiceTester()
 
-const {
-  isVPlusDottedVersionNClausesWithOptionalSuffixAndEpoch,
-} = require('../test-validators')
-const t = (module.exports = require('../tester').createServiceTester())
+const isUbuntuVersion = Joi.string().regex(
+  /^v(\d+:)?\d+(\.\d+)*([\w\\.]*)?([-+~].*)?$/
+)
 
 t.create('Ubuntu package (default distribution, valid)')
   .get('/apt.json')
   .expectBadge({
     label: 'ubuntu',
-    message: isVPlusDottedVersionNClausesWithOptionalSuffixAndEpoch,
+    message: isUbuntuVersion,
   })
 
 t.create('Ubuntu package (valid)')

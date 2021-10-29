@@ -1,16 +1,14 @@
-'use strict'
+import { expect } from 'chai'
+import nock from 'nock'
+import { cleanUpNockAfterEach, defaultContext } from '../test-helpers.js'
+import TeamCityCoverage from './teamcity-coverage.service.js'
+import { user, pass, host, config } from './teamcity-test-helpers.js'
 
-const { expect } = require('chai')
-const nock = require('nock')
-const { cleanUpNockAfterEach, defaultContext } = require('../test-helpers')
-const TeamCityCoverage = require('./teamcity-coverage.service')
-const { user, pass, config } = require('./teamcity-test-helpers')
-
-describe('TeamCityCoverage', function() {
+describe('TeamCityCoverage', function () {
   cleanUpNockAfterEach()
 
-  it('sends the auth information as configured', async function() {
-    const scope = nock('https://mycompany.teamcity.com')
+  it('sends the auth information as configured', async function () {
+    const scope = nock(`https://${host}`)
       .get(
         `/app/rest/builds/${encodeURIComponent(
           'buildType:(id:bt678)'
@@ -28,11 +26,14 @@ describe('TeamCityCoverage', function() {
       })
 
     expect(
-      await TeamCityCoverage.invoke(defaultContext, config, {
-        protocol: 'https',
-        hostAndPath: 'mycompany.teamcity.com',
-        buildId: 'bt678',
-      })
+      await TeamCityCoverage.invoke(
+        defaultContext,
+        config,
+        {
+          buildId: 'bt678',
+        },
+        { server: 'https://mycompany.teamcity.com' }
+      )
     ).to.deep.equal({
       message: '82%',
       color: 'yellowgreen',

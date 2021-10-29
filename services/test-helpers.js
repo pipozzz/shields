@@ -1,11 +1,11 @@
-'use strict'
-
-const nock = require('nock')
-const request = require('request')
-const { promisify } = require('../core/base-service/legacy-request-handler')
+import bytes from 'bytes'
+import nock from 'nock'
+import config from 'config'
+import { fetchFactory } from '../core/base-service/got.js'
+const runnerConfig = config.util.toObject()
 
 function cleanUpNockAfterEach() {
-  afterEach(function() {
+  afterEach(function () {
     nock.restore()
     nock.cleanAll()
     nock.enableNetConnect()
@@ -13,12 +13,26 @@ function cleanUpNockAfterEach() {
   })
 }
 
-const sendAndCacheRequest = promisify(request)
+function noToken(serviceClass) {
+  let hasLogged = false
+  return () => {
+    const userKey = serviceClass.auth.userKey
+    const passKey = serviceClass.auth.passKey
+    const noToken =
+      (userKey && !runnerConfig.private[userKey]) ||
+      (passKey && !runnerConfig.private[passKey])
+    if (noToken && !hasLogged) {
+      console.warn(
+        `${serviceClass.name}: no credentials configured, tests for this service will be skipped. Add credentials in local.yml to run them.`
+      )
+      hasLogged = true
+    }
+    return noToken
+  }
+}
+
+const sendAndCacheRequest = fetchFactory(bytes(runnerConfig.public.fetchLimit))
 
 const defaultContext = { sendAndCacheRequest }
 
-module.exports = {
-  cleanUpNockAfterEach,
-  sendAndCacheRequest,
-  defaultContext,
-}
+export { cleanUpNockAfterEach, noToken, sendAndCacheRequest, defaultContext }

@@ -1,13 +1,11 @@
-'use strict'
+import { ServiceTester } from '../tester.js'
+import { invalidJSON } from '../response-fixtures.js'
+import { isMetric, isVPlusTripleDottedVersion } from '../test-validators.js'
 
-const { ServiceTester } = require('../tester')
-const { invalidJSON } = require('../response-fixtures')
-const { isMetric, isVPlusTripleDottedVersion } = require('../test-validators')
-
-const t = (module.exports = new ServiceTester({
+export const t = new ServiceTester({
   id: 'apm',
   title: 'Atom Package Manager',
-}))
+})
 
 t.create('Downloads')
   .get('/dm/vim-mode.json')
@@ -54,8 +52,6 @@ t.create('Invalid License')
 t.create('Unexpected response')
   .get('/dm/vim-mode.json')
   .intercept(nock =>
-    nock('https://atom.io')
-      .get('/api/packages/vim-mode')
-      .reply(invalidJSON)
+    nock('https://atom.io').get('/api/packages/vim-mode').reply(invalidJSON)
   )
   .expectBadge({ label: 'downloads', message: 'unparseable json response' })

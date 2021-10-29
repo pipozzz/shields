@@ -1,14 +1,12 @@
-'use strict'
+import { expect } from 'chai'
+import { NotFound, InvalidResponse, Inaccessible } from './errors.js'
+import checkErrorResponse from './check-error-response.js'
 
-const { expect } = require('chai')
-const { NotFound, InvalidResponse, Inaccessible } = require('./errors')
-const checkErrorResponse = require('./check-error-response')
-
-describe('async error handler', function() {
+describe('async error handler', function () {
   const buffer = Buffer.from('some stuff')
 
-  context('when status is 200', function() {
-    it('passes through the inputs', async function() {
+  context('when status is 200', function () {
+    it('passes through the inputs', async function () {
       const res = { statusCode: 200 }
       expect(await checkErrorResponse()({ res, buffer })).to.deep.equal({
         res,
@@ -17,11 +15,11 @@ describe('async error handler', function() {
     })
   })
 
-  context('when status is 404', function() {
+  context('when status is 404', function () {
     const buffer = Buffer.from('some stuff')
     const res = { statusCode: 404 }
 
-    it('throws NotFound', async function() {
+    it('throws NotFound', async function () {
       try {
         await checkErrorResponse()({ res, buffer })
         expect.fail('Expected to throw')
@@ -34,7 +32,7 @@ describe('async error handler', function() {
       }
     })
 
-    it('displays the custom not found message', async function() {
+    it('displays the custom not found message', async function () {
       const notFoundMessage = 'no goblins found'
       try {
         await checkErrorResponse({ 404: notFoundMessage })({ res, buffer })
@@ -47,8 +45,8 @@ describe('async error handler', function() {
     })
   })
 
-  context('when status is 4xx', function() {
-    it('throws InvalidResponse', async function() {
+  context('when status is 4xx', function () {
+    it('throws InvalidResponse', async function () {
       const res = { statusCode: 499 }
       try {
         await checkErrorResponse()({ res, buffer })
@@ -64,7 +62,7 @@ describe('async error handler', function() {
       }
     })
 
-    it('displays the custom error message', async function() {
+    it('displays the custom error message', async function () {
       const res = { statusCode: 403 }
       try {
         await checkErrorResponse({ 403: 'access denied' })({ res })
@@ -79,8 +77,8 @@ describe('async error handler', function() {
     })
   })
 
-  context('when status is 5xx', function() {
-    it('throws Inaccessible', async function() {
+  context('when status is 5xx', function () {
+    it('throws Inaccessible', async function () {
       const res = { statusCode: 503 }
       try {
         await checkErrorResponse()({ res, buffer })
@@ -96,7 +94,7 @@ describe('async error handler', function() {
       }
     })
 
-    it('displays the custom error message', async function() {
+    it('displays the custom error message', async function () {
       const res = { statusCode: 500 }
       try {
         await checkErrorResponse({ 500: 'server overloaded' })({ res, buffer })

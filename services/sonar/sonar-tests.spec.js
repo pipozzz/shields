@@ -1,9 +1,7 @@
-'use strict'
+import { test, given } from 'sazerac'
+import { SonarTests } from './sonar-tests.service.js'
 
-const { test, given } = require('sazerac')
-const SonarTests = require('./sonar-tests.service')[1]
-
-describe('SonarTests', function() {
+describe('SonarTests', function () {
   test(SonarTests.render, () => {
     given({ value: 0, metric: 'test_failures' }).expect({
       label: 'test failures',

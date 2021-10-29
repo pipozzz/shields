@@ -1,9 +1,7 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const { addv } = require('../text-formatters')
-const { latestVersion } = require('./luarocks-version-helpers')
-const { BaseJsonService, NotFound } = require('..')
+import Joi from 'joi'
+import { addv } from '../text-formatters.js'
+import { BaseJsonService, NotFound } from '../index.js'
+import { latestVersion } from './luarocks-version-helpers.js'
 
 const schema = Joi.object({
   repository: Joi.object()
@@ -14,38 +12,32 @@ const schema = Joi.object({
     .required(),
 }).required()
 
-module.exports = class Luarocks extends BaseJsonService {
-  static get category() {
-    return 'version'
+export default class Luarocks extends BaseJsonService {
+  static category = 'version'
+
+  static route = {
+    base: 'luarocks/v',
+    pattern: ':user/:moduleName/:version?',
   }
 
-  static get route() {
-    return {
-      base: 'luarocks/v',
-      pattern: ':user/:moduleName/:version?',
-    }
-  }
-
-  static get examples() {
-    return [
-      {
-        title: 'LuaRocks',
-        namedParams: {
-          user: 'mpeterv',
-          moduleName: 'luacheck',
-        },
-        staticPreview: this.render({ version: '0.23.0-1' }),
+  static examples = [
+    {
+      title: 'LuaRocks',
+      namedParams: {
+        user: 'mpeterv',
+        moduleName: 'luacheck',
       },
-    ]
-  }
+      staticPreview: this.render({ version: '0.23.0-1' }),
+    },
+  ]
 
-  static get defaultBadgeData() {
-    return {
-      label: 'luarocks',
-    }
+  static defaultBadgeData = {
+    label: 'luarocks',
   }
 
   static render({ version }) {
+    // The badge colors are following the heuristic rule where `scm < dev <
+    // stable` (e.g., `scm-1` < `dev-1` < `0.1.0-1`).
     let color
     switch (version.slice(0, 3).toLowerCase()) {
       case 'dev':

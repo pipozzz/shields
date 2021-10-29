@@ -1,26 +1,17 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const { expect } = require('chai')
-const gql = require('graphql-tag')
-const sinon = require('sinon')
-const BaseGraphqlService = require('./base-graphql')
-const { InvalidResponse } = require('./errors')
+import Joi from 'joi'
+import { expect } from 'chai'
+import gql from 'graphql-tag'
+import sinon from 'sinon'
+import BaseGraphqlService from './base-graphql.js'
+import { InvalidResponse } from './errors.js'
 
 const dummySchema = Joi.object({
   requiredString: Joi.string().required(),
 }).required()
 
 class DummyGraphqlService extends BaseGraphqlService {
-  static get category() {
-    return 'cat'
-  }
-
-  static get route() {
-    return {
-      base: 'foo',
-    }
-  }
+  static category = 'cat'
+  static route = { base: 'foo' }
 
   async handle() {
     const { requiredString } = await this._requestGraphql({
@@ -36,10 +27,10 @@ class DummyGraphqlService extends BaseGraphqlService {
   }
 }
 
-describe('BaseGraphqlService', function() {
-  describe('Making requests', function() {
+describe('BaseGraphqlService', function () {
+  describe('Making requests', function () {
     let sendAndCacheRequest
-    beforeEach(function() {
+    beforeEach(function () {
       sendAndCacheRequest = sinon.stub().returns(
         Promise.resolve({
           buffer: '{"some": "json"}',
@@ -48,7 +39,7 @@ describe('BaseGraphqlService', function() {
       )
     })
 
-    it('invokes _sendAndCacheRequest', async function() {
+    it('invokes _sendAndCacheRequest', async function () {
       await DummyGraphqlService.invoke(
         { sendAndCacheRequest },
         { handleInternalErrors: false }
@@ -64,7 +55,7 @@ describe('BaseGraphqlService', function() {
       )
     })
 
-    it('forwards options to _sendAndCacheRequest', async function() {
+    it('forwards options to _sendAndCacheRequest', async function () {
       class WithOptions extends DummyGraphqlService {
         async handle() {
           const { value } = await this._requestGraphql({
@@ -98,8 +89,8 @@ describe('BaseGraphqlService', function() {
     })
   })
 
-  describe('Making badges', function() {
-    it('handles valid json responses', async function() {
+  describe('Making badges', function () {
+    it('handles valid json responses', async function () {
       const sendAndCacheRequest = async () => ({
         buffer: '{"requiredString": "some-string"}',
         res: { statusCode: 200 },
@@ -114,7 +105,7 @@ describe('BaseGraphqlService', function() {
       })
     })
 
-    it('handles json responses which do not match the schema', async function() {
+    it('handles json responses which do not match the schema', async function () {
       const sendAndCacheRequest = async () => ({
         buffer: '{"unexpectedKey": "some-string"}',
         res: { statusCode: 200 },
@@ -131,7 +122,7 @@ describe('BaseGraphqlService', function() {
       })
     })
 
-    it('handles unparseable json responses', async function() {
+    it('handles unparseable json responses', async function () {
       const sendAndCacheRequest = async () => ({
         buffer: 'not json',
         res: { statusCode: 200 },
@@ -149,8 +140,8 @@ describe('BaseGraphqlService', function() {
     })
   })
 
-  describe('Error handling', function() {
-    it('handles generic error', async function() {
+  describe('Error handling', function () {
+    it('handles generic error', async function () {
       const sendAndCacheRequest = async () => ({
         buffer: '{ "errors": [ { "message": "oh noes!!" } ] }',
         res: { statusCode: 200 },
@@ -167,7 +158,7 @@ describe('BaseGraphqlService', function() {
       })
     })
 
-    it('handles custom error', async function() {
+    it('handles custom error', async function () {
       class WithErrorHandler extends DummyGraphqlService {
         async handle() {
           const { requiredString } = await this._requestGraphql({
@@ -178,7 +169,7 @@ describe('BaseGraphqlService', function() {
                 requiredString
               }
             `,
-            transformErrors: function(errors) {
+            transformErrors: function (errors) {
               if (errors[0].message === 'oh noes!!') {
                 return new InvalidResponse({
                   prettyMessage: 'a terrible thing has happened',

@@ -1,11 +1,10 @@
-'use strict'
-
-const { isIntegerPercentage } = require('../test-validators')
-const t = (module.exports = require('../tester').createServiceTester())
+import { isIntegerPercentage } from '../test-validators.js'
+import { createServiceTester } from '../tester.js'
+export const t = await createServiceTester()
 
 const org = 'swellaby'
 const project = 'opensource'
-const linuxDefinitionId = 21
+const linuxDefinitionId = 25
 const macDefinitionId = 26
 const windowsDefinitionId = 24
 const nonExistentDefinitionId = 234421
@@ -74,9 +73,7 @@ t.create('unknown build definition')
 t.create('404 latest build error response')
   .get(mockBadgeUriPath)
   .intercept(nock =>
-    nock(azureDevOpsApiBaseUri)
-      .get(mockLatestBuildApiUriPath)
-      .reply(404)
+    nock(azureDevOpsApiBaseUri).get(mockLatestBuildApiUriPath).reply(404)
   )
   .expectBadge({
     label: 'coverage',

@@ -1,11 +1,9 @@
-'use strict'
+import { expect } from 'chai'
+import { test, given } from 'sazerac'
+import { validateExample, transformExample } from './examples.js'
 
-const { expect } = require('chai')
-const { test, given } = require('sazerac')
-const { validateExample, transformExample } = require('./examples')
-
-describe('validateExample function', function() {
-  it('passes valid examples', function() {
+describe('validateExample function', function () {
+  it('passes valid examples', function () {
     const validExamples = [
       {
         title: 'Package manager versioning badge',
@@ -23,7 +21,7 @@ describe('validateExample function', function() {
     })
   })
 
-  it('rejects invalid examples', function() {
+  it('rejects invalid examples', function () {
     const invalidExamples = [
       {},
       { staticPreview: { message: '123' } },
@@ -74,7 +72,7 @@ describe('validateExample function', function() {
   })
 })
 
-test(transformExample, function() {
+test(transformExample, function () {
   const ExampleService = {
     name: 'ExampleService',
     route: {
@@ -84,6 +82,7 @@ test(transformExample, function() {
     defaultBadgeData: {
       label: 'downloads',
     },
+    category: 'platform-support',
   }
 
   given(
@@ -109,7 +108,7 @@ test(transformExample, function() {
       namedLogo: undefined,
       style: undefined,
     },
-    keywords: ['hello'],
+    keywords: ['hello', 'platform'],
     documentation: undefined,
   })
 
@@ -135,7 +134,7 @@ test(transformExample, function() {
       namedLogo: undefined,
       style: undefined,
     },
-    keywords: ['hello'],
+    keywords: ['hello', 'platform'],
     documentation: undefined,
   })
 
@@ -162,7 +161,7 @@ test(transformExample, function() {
       namedLogo: undefined,
       style: undefined,
     },
-    keywords: ['hello'],
+    keywords: ['hello', 'platform'],
     documentation: undefined,
   })
 })

@@ -1,17 +1,24 @@
-'use strict'
-
-const { expect } = require('chai')
-const nock = require('nock')
-const { cleanUpNockAfterEach, defaultContext } = require('../test-helpers')
-const SonarFortifyRating = require('./sonar-fortify-rating.service')
+import { expect } from 'chai'
+import nock from 'nock'
+import { cleanUpNockAfterEach, defaultContext } from '../test-helpers.js'
+import SonarFortifyRating from './sonar-fortify-rating.service.js'
 
 const token = 'abc123def456'
-const config = { private: { sonarqube_token: token } }
+const config = {
+  public: {
+    services: {
+      sonar: { authorizedOrigins: ['http://sonar.petalslink.com'] },
+    },
+  },
+  private: {
+    sonarqube_token: token,
+  },
+}
 
-describe('SonarFortifyRating', function() {
+describe('SonarFortifyRating', function () {
   cleanUpNockAfterEach()
 
-  it('sends the auth information as configured', async function() {
+  it('sends the auth information as configured', async function () {
     const scope = nock('http://sonar.petalslink.com')
       .get('/api/measures/component')
       .query({

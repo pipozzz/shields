@@ -1,48 +1,7 @@
-'use strict'
-
-const queryString = require('query-string')
-const request = require('request')
-const log = require('../../../core/server/log')
-const secretIsValid = require('../../../core/server/secret-is-valid')
-const serverSecrets = require('../../../lib/server-secrets')
-
-function sendTokenToAllServers(token) {
-  const {
-    shields_ips: shieldsIps,
-    shields_secret: shieldsSecret,
-  } = serverSecrets
-  return Promise.all(
-    shieldsIps.map(
-      ip =>
-        new Promise((resolve, reject) => {
-          const options = {
-            url: `https://${ip}/github-auth/add-token`,
-            method: 'POST',
-            form: {
-              shieldsSecret,
-              token,
-            },
-            // We target servers by IP, and we use HTTPS. Assuming that
-            // 1. Internet routers aren't hacked, and
-            // 2. We don't unknowingly lose our IP to someone else,
-            // we're not leaking people's and our information.
-            // (If we did, it would have no impact, as we only ask for a token,
-            // no GitHub scope. The malicious entity would only be able to use
-            // our rate limit pool.)
-            // FIXME: use letsencrypt.
-            strictSSL: false,
-          }
-          request(options, (err, res, body) => {
-            if (err != null) {
-              reject(err)
-            } else {
-              resolve()
-            }
-          })
-        })
-    )
-  )
-}
+import queryString from 'query-string'
+import request from 'request'
+import { userAgent } from '../../../core/base-service/legacy-request-handler.js'
+import log from '../../../core/server/log.js'
 
 function setRoutes({ server, authHelper, onTokenAccepted }) {
   const baseUrl = process.env.GATSBY_BASE_URL || 'https://img.shields.io'
@@ -50,7 +9,11 @@ function setRoutes({ server, authHelper, onTokenAccepted }) {
   server.route(/^\/github-auth$/, (data, match, end, ask) => {
     ask.res.statusCode = 302 // Found.
     const query = queryString.stringify({
-      client_id: authHelper.user,
+      // TODO The `_user` property bypasses security checks in AuthHelper.
+      // (e.g: enforceStrictSsl and shouldAuthenticateRequest).
+      // Do not use it elsewhere. It would be better to clean this up so
+      // it's not setting a bad example.
+      client_id: authHelper._user,
       redirect_uri: `${baseUrl}/github-auth/done`,
     })
     ask.res.setHeader(
@@ -62,7 +25,7 @@ function setRoutes({ server, authHelper, onTokenAccepted }) {
 
   server.route(/^\/github-auth\/done$/, (data, match, end, ask) => {
     if (!data.code) {
-      log(`GitHub OAuth data: ${JSON.stringify(data)}`)
+      log.log(`GitHub OAuth data: ${JSON.stringify(data)}`)
       return end('GitHub OAuth authentication failed to provide a code.')
     }
 
@@ -71,11 +34,15 @@ function setRoutes({ server, authHelper, onTokenAccepted }) {
       method: 'POST',
       headers: {
         'Content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
-        'User-Agent': 'Shields.io',
+        'User-Agent': userAgent,
       },
       form: queryString.stringify({
-        client_id: authHelper.user,
-        client_secret: authHelper.pass,
+        // TODO The `_user` and `_pass` properties bypass security checks in
+        // AuthHelper (e.g: enforceStrictSsl and shouldAuthenticateRequest).
+        // Do not use them elsewhere. It would be better to clean
+        // this up so it's not setting a bad example.
+        client_id: authHelper._user,
+        client_secret: authHelper._pass,
         code: data.code,
       }),
     }
@@ -109,26 +76,9 @@ function setRoutes({ server, authHelper, onTokenAccepted }) {
           '<p><a href="/">Back to the website</a></p>'
       )
 
-      sendTokenToAllServers(token).catch(e => {
-        console.error('GitHub user token transmission failed:', e)
-      })
+      onTokenAccepted(token)
     })
   })
-
-  server.route(/^\/github-auth\/add-token$/, (data, match, end, ask) => {
-    if (!secretIsValid(data.shieldsSecret)) {
-      // An unknown entity tries to connect. Let the connection linger for 10s.
-      setTimeout(() => {
-        end('Invalid secret.')
-      }, 10000)
-      return
-    }
-
-    onTokenAccepted(data.token)
-    end('Thanks!')
-  })
 }
 
-module.exports = {
-  setRoutes,
-}
+export { setRoutes }

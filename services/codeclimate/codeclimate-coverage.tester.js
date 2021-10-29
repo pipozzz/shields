@@ -1,18 +1,20 @@
-'use strict'
+import Joi from 'joi'
+import { isIntegerPercentage } from '../test-validators.js'
+import { createServiceTester } from '../tester.js'
+export const t = await createServiceTester()
 
-const Joi = require('@hapi/joi')
-const { isIntegerPercentage } = require('../test-validators')
-const t = (module.exports = require('../tester').createServiceTester())
+// Examples for this service can be found through the explore page:
+// https://codeclimate.com/explore
 
 t.create('test coverage percentage')
-  .get('/coverage/jekyll/jekyll.json')
+  .get('/coverage/codeclimate/codeclimate.json')
   .expectBadge({
     label: 'coverage',
     message: isIntegerPercentage,
   })
 
 t.create('test coverage letter')
-  .get('/coverage-letter/jekyll/jekyll.json')
+  .get('/coverage-letter/codeclimate/codeclimate.json')
   .expectBadge({
     label: 'coverage',
     message: Joi.equal('A', 'B', 'C', 'D', 'E', 'F'),
@@ -26,7 +28,7 @@ t.create('test coverage percentage for non-existent repo')
   })
 
 t.create('test coverage percentage for repo without test reports')
-  .get('/coverage/angular/angular.js.json')
+  .get('/coverage/angular/angular.json')
   .expectBadge({
     label: 'coverage',
     message: 'test report not found',

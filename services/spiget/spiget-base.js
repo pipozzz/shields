@@ -1,13 +1,12 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const { BaseJsonService } = require('..')
+import Joi from 'joi'
+import { BaseJsonService } from '../index.js'
 
 const resourceSchema = Joi.object({
   downloads: Joi.number().required(),
   file: Joi.object({
+    type: Joi.string().required(),
     size: Joi.number().required(),
-    sizeUnit: Joi.string().required(),
+    sizeUnit: Joi.string().allow('').required(),
   }).required(),
   testedVersions: Joi.array(),
   rating: Joi.object({
@@ -35,4 +34,4 @@ class BaseSpigetService extends BaseJsonService {
   }
 }
 
-module.exports = { keywords, documentation, BaseSpigetService }
+export { keywords, documentation, BaseSpigetService }

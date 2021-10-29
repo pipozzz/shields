@@ -1,28 +1,18 @@
-'use strict'
+import { createServiceTester } from '../tester.js'
+export const t = await createServiceTester()
 
-const {
-  isVPlusDottedVersionNClausesWithOptionalSuffix,
-} = require('../test-validators')
-const t = (module.exports = require('../tester').createServiceTester())
-
-t.create('latest version')
+t.create('latest version redirection')
   .get('/com.github.fabriziocucci/yacl4j.json') // http://repo1.maven.org/maven2/com/github/fabriziocucci/yacl4j/
-  .expectBadge({
-    label: 'maven-central',
-    message: isVPlusDottedVersionNClausesWithOptionalSuffix,
-  })
+  .expectRedirect(
+    `/maven-metadata/v.json?label=maven-central&metadataUrl=${encodeURIComponent(
+      'https://repo1.maven.org/maven2/com/github/fabriziocucci/yacl4j/maven-metadata.xml'
+    )}`
+  )
 
-t.create('latest 0.8 version')
+t.create('latest 0.8 version redirection')
   .get('/com.github.fabriziocucci/yacl4j/0.8.json') // http://repo1.maven.org/maven2/com/github/fabriziocucci/yacl4j/
-  .expectBadge({
-    label: 'maven-central',
-    message: isVPlusDottedVersionNClausesWithOptionalSuffix,
-  })
-
-t.create('inexistent artifact')
-  .get('/inexistent-group-id/inexistent-artifact-id.json')
-  .expectBadge({ label: 'maven-central', message: 'not found' })
-
-t.create('inexistent version prefix')
-  .get('/com.github.fabriziocucci/yacl4j/99.json')
-  .expectBadge({ label: 'maven-central', message: 'version prefix not found' })
+  .expectRedirect(
+    `/maven-metadata/v.json?label=maven-central&metadataUrl=${encodeURIComponent(
+      'https://repo1.maven.org/maven2/com/github/fabriziocucci/yacl4j/maven-metadata.xml'
+    )}&versionPrefix=0.8`
+  )

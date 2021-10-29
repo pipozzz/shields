@@ -1,17 +1,15 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const { nonNegativeInteger } = require('../validators')
-const { formatDate, metric } = require('../text-formatters')
-const { age } = require('../color-formatters')
-const { GithubAuthV3Service } = require('./github-auth-service')
-const {
+import Joi from 'joi'
+import { nonNegativeInteger } from '../validators.js'
+import { formatDate, metric } from '../text-formatters.js'
+import { age } from '../color-formatters.js'
+import { InvalidResponse } from '../index.js'
+import { GithubAuthV3Service } from './github-auth-service.js'
+import {
   documentation,
   errorMessagesFor,
   stateColor,
   commentsColor,
-} = require('./github-helpers')
-const { InvalidResponse } = require('..')
+} from './github-helpers.js'
 
 const commonSchemaFields = {
   number: nonNegativeInteger,
@@ -21,15 +19,13 @@ const commonSchemaFields = {
 const stateMap = {
   schema: Joi.object({
     ...commonSchemaFields,
-    state: Joi.string()
-      .allow('open', 'closed')
-      .required(),
+    state: Joi.string().allow('open', 'closed').required(),
     merged_at: Joi.string().allow(null),
   }).required(),
   transform: ({ json }) => ({
     state: json.state,
     // Because eslint will not be happy with this snake_case name :(
-    merged: json['merged_at'] !== null,
+    merged: json.merged_at !== null,
   }),
   render: ({ value, isPR, number }) => {
     const state = value.state
@@ -154,55 +150,46 @@ const propertyMap = {
   'last-update': ageUpdateMap,
 }
 
-module.exports = class GithubIssueDetail extends GithubAuthV3Service {
-  static get category() {
-    return 'issue-tracking'
+export default class GithubIssueDetail extends GithubAuthV3Service {
+  static category = 'issue-tracking'
+  static route = {
+    base: 'github',
+    pattern:
+      ':issueKind(issues|pulls)/detail/:property(state|title|author|label|comments|age|last-update)/:user/:repo/:number([0-9]+)',
   }
 
-  static get route() {
-    return {
-      base: 'github',
-      pattern:
-        ':issueKind(issues|pulls)/detail/:property(state|title|author|label|comments|age|last-update)/:user/:repo/:number([0-9]+)',
-    }
-  }
-
-  static get examples() {
-    return [
-      {
-        title: 'GitHub issue/pull request detail',
-        namedParams: {
-          issueKind: 'issues',
-          property: 'state',
-          user: 'badges',
-          repo: 'shields',
-          number: '979',
-        },
-        staticPreview: this.render({
-          property: 'state',
-          value: { state: 'closed' },
-          isPR: false,
-          number: '979',
-        }),
-        keywords: [
-          'state',
-          'title',
-          'author',
-          'label',
-          'comments',
-          'age',
-          'last update',
-        ],
-        documentation,
+  static examples = [
+    {
+      title: 'GitHub issue/pull request detail',
+      namedParams: {
+        issueKind: 'issues',
+        property: 'state',
+        user: 'badges',
+        repo: 'shields',
+        number: '979',
       },
-    ]
-  }
+      staticPreview: this.render({
+        property: 'state',
+        value: { state: 'closed' },
+        isPR: false,
+        number: '979',
+      }),
+      keywords: [
+        'state',
+        'title',
+        'author',
+        'label',
+        'comments',
+        'age',
+        'last update',
+      ],
+      documentation,
+    },
+  ]
 
-  static get defaultBadgeData() {
-    return {
-      label: 'issue/pull request',
-      color: 'informational',
-    }
+  static defaultBadgeData = {
+    label: 'issue/pull request',
+    color: 'informational',
   }
 
   static render({ property, value, isPR, number }) {
@@ -219,7 +206,7 @@ module.exports = class GithubIssueDetail extends GithubAuthV3Service {
 
   transform({ json, property, issueKind }) {
     const value = propertyMap[property].transform({ json, property })
-    const isPR = json.hasOwnProperty('pull_request') || issueKind === 'pulls'
+    const isPR = 'pull_request' in json || issueKind === 'pulls'
     return { value, isPR }
   }
 

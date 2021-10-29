@@ -1,8 +1,6 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const validate = require('../../core/base-service/validate')
-const { BaseJsonService, NotFound } = require('..')
+import Joi from 'joi'
+import validate from '../../core/base-service/validate.js'
+import { BaseJsonService, NotFound } from '../index.js'
 
 const extensionQuerySchema = Joi.object({
   results: Joi.array()
@@ -22,11 +20,13 @@ const extensionQuerySchema = Joi.object({
               versions: Joi.array()
                 .items(
                   Joi.object({
-                    version: Joi.string().regex(/^(\d+\.\d+\.\d+)(\.\d+)?$/),
+                    version: Joi.string().required(),
                   })
                 )
                 .min(1)
                 .required(),
+              releaseDate: Joi.string().required(),
+              lastUpdated: Joi.string().required(),
             })
           )
           .required(),
@@ -43,23 +43,19 @@ const statisticSchema = Joi.object().keys({
   ratingcount: Joi.number().default(0),
 })
 
-module.exports = class VisualStudioMarketplaceBase extends BaseJsonService {
-  static get keywords() {
-    return [
-      'vscode',
-      'tfs',
-      'vsts',
-      'visual-studio-marketplace',
-      'vs-marketplace',
-      'vscode-marketplace',
-    ]
-  }
+export default class VisualStudioMarketplaceBase extends BaseJsonService {
+  static keywords = [
+    'vscode',
+    'tfs',
+    'vsts',
+    'visual-studio-marketplace',
+    'vs-marketplace',
+    'vscode-marketplace',
+  ]
 
-  static get defaultBadgeData() {
-    return {
-      label: 'vs marketplace',
-      color: 'blue',
-    }
+  static defaultBadgeData = {
+    label: 'vs marketplace',
+    color: 'blue',
   }
 
   async fetch({ extensionId }) {

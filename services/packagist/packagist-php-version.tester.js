@@ -1,7 +1,6 @@
-'use strict'
-
-const { isComposerVersion } = require('../test-validators')
-const t = (module.exports = require('../tester').createServiceTester())
+import { isComposerVersion } from '../test-validators.js'
+import { createServiceTester } from '../tester.js'
+export const t = await createServiceTester()
 
 t.create('gets the package version of symfony')
   .get('/symfony/symfony.json')
@@ -26,3 +25,11 @@ t.create('invalid package name')
 t.create('invalid version')
   .get('/symfony/symfony/invalid.json')
   .expectBadge({ label: 'php', message: 'invalid version' })
+
+t.create('custom server')
+  .get('/symfony/symfony.json?server=https%3A%2F%2Fpackagist.org')
+  .expectBadge({ label: 'php', message: isComposerVersion })
+
+t.create('invalid custom server')
+  .get('/symfony/symfony.json?server=https%3A%2F%2Fpackagist.com')
+  .expectBadge({ label: 'php', message: 'not found' })

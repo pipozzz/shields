@@ -2,9 +2,7 @@
  * Commonly-used functions for formatting text in badge labels. Includes
  * ordinal numbers, currency codes, star ratings, versions, etc.
  */
-'use strict'
-
-const moment = require('moment')
+import moment from 'moment'
 moment().format()
 
 function starRating(rating, max = 5) {
@@ -43,8 +41,8 @@ function currencyFromCode(code) {
 }
 
 function ordinalNumber(n) {
-  const s = ['ᵗʰ', 'ˢᵗ', 'ⁿᵈ', 'ʳᵈ'],
-    v = n % 100
+  const s = ['ᵗʰ', 'ˢᵗ', 'ⁿᵈ', 'ʳᵈ']
+  const v = n % 100
   return n + (s[(v - 20) % 10] || s[v] || s[0])
 }
 
@@ -124,7 +122,7 @@ function formatRelativeDate(timestamp) {
     .toLowerCase()
 }
 
-module.exports = {
+export {
   starRating,
   currencyFromCode,
   ordinalNumber,

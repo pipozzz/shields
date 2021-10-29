@@ -1,8 +1,7 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const t = (module.exports = require('../tester').createServiceTester())
-const { isSemver } = require('../test-validators')
+import Joi from 'joi'
+import { createServiceTester } from '../tester.js'
+import { isSemver } from '../test-validators.js'
+export const t = await createServiceTester()
 
 const isPsycopg2Version = Joi.string().regex(/^v([0-9][.]?)+$/)
 
@@ -18,20 +17,16 @@ const isPsycopg2Version = Joi.string().regex(/^v([0-9][.]?)+$/)
 
   We'll run this test against a project that follows SemVer...
 */
-t.create('version (semver)')
-  .get('/requests.json')
-  .expectBadge({
-    label: 'pypi',
-    message: isSemver,
-  })
+t.create('version (semver)').get('/requests.json').expectBadge({
+  label: 'pypi',
+  message: isSemver,
+})
 
 // ..whereas this project does not folow SemVer
-t.create('version (not semver)')
-  .get('/psycopg2.json')
-  .expectBadge({
-    label: 'pypi',
-    message: isPsycopg2Version,
-  })
+t.create('version (not semver)').get('/psycopg2.json').expectBadge({
+  label: 'pypi',
+  message: isPsycopg2Version,
+})
 
 t.create('version (invalid)')
   .get('/not-a-package.json')

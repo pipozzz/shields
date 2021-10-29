@@ -1,11 +1,7 @@
-'use strict'
+import { test, given, forCases } from 'sazerac'
+import { renderDependenciesBadge } from './librariesio-dependencies-helpers.js'
 
-const { test, given, forCases } = require('sazerac')
-const {
-  renderDependenciesBadge,
-} = require('./librariesio-dependencies-helpers')
-
-describe('Libraries.io dependency helpers', function() {
+describe('Libraries.io dependency helpers', function () {
   test(renderDependenciesBadge, () => {
     forCases([
       given({ deprecatedCount: 10, outdatedCount: 0 }),

@@ -1,10 +1,8 @@
-'use strict'
+import Joi from 'joi'
+import validate from '../core/base-service/validate.js'
+import { InvalidResponse } from './index.js'
 
-const Joi = require('@hapi/joi')
-const validate = require('../core/base-service/validate')
-const { InvalidResponse } = require('.')
-
-const optionalStringWhenNamedLogoPresent = Joi.alternatives().when(
+const optionalStringWhenNamedLogoPresent = Joi.alternatives().conditional(
   'namedLogo',
   {
     is: Joi.string().required(),
@@ -13,14 +11,12 @@ const optionalStringWhenNamedLogoPresent = Joi.alternatives().when(
 )
 
 const optionalNumberWhenAnyLogoPresent = Joi.alternatives()
-  .when('namedLogo', { is: Joi.string().required(), then: Joi.number() })
-  .when('logoSvg', { is: Joi.string().required(), then: Joi.number() })
+  .conditional('namedLogo', { is: Joi.string().required(), then: Joi.number() })
+  .conditional('logoSvg', { is: Joi.string().required(), then: Joi.number() })
 
 const endpointSchema = Joi.object({
   schemaVersion: 1,
-  label: Joi.string()
-    .allow('')
-    .required(),
+  label: Joi.string().allow('').required(),
   message: Joi.string().required(),
   color: Joi.string(),
   labelColor: Joi.string(),
@@ -31,9 +27,7 @@ const endpointSchema = Joi.object({
   logoWidth: optionalNumberWhenAnyLogoPresent,
   logoPosition: optionalNumberWhenAnyLogoPresent,
   style: Joi.string(),
-  cacheSeconds: Joi.number()
-    .integer()
-    .min(0),
+  cacheSeconds: Joi.number().integer().min(0),
 })
   // `namedLogo` or `logoSvg`; not both.
   .oxor('namedLogo', 'logoSvg')
@@ -70,6 +64,7 @@ async function fetchEndpointData(
     schema: anySchema,
     url,
     errorMessages,
+    options: { gzip: true },
   })
   return validateEndpointData(json, {
     prettyErrorMessage: validationPrettyErrorMessage,
@@ -77,7 +72,4 @@ async function fetchEndpointData(
   })
 }
 
-module.exports = {
-  validateEndpointData,
-  fetchEndpointData,
-}
+export { validateEndpointData, fetchEndpointData }

@@ -7,7 +7,7 @@ The Shields codebase is divided into several parts:
 1.  The frontend (about 7% of the code)
     1. [`frontend`][frontend]
 2.  The badge renderer (which is available as an npm package)
-    1.  [`gh-badges`][gh-badges]
+    1.  [`badge-maker`][badge-maker]
 3.  The base service classes (about 8% of the code, and probably the most important
     code in the codebase)
     1.  [`core/base-service`][base-service]
@@ -24,7 +24,7 @@ The Shields codebase is divided into several parts:
     1.  [`lib/suggest.js`][suggest]
 
 [frontend]: https://github.com/badges/shields/tree/master/frontend
-[gh-badges]: https://github.com/badges/shields/tree/master/gh-badges
+[badge-maker]: https://github.com/badges/shields/tree/master/badge-maker
 [base-service]: https://github.com/badges/shields/tree/master/core/base-service
 [server]: https://github.com/badges/shields/tree/master/core/server
 [token-pooling]: https://github.com/badges/shields/tree/master/core/token-pooling
@@ -36,7 +36,7 @@ The tests are also divided into several parts:
 1.  Unit and functional tests of the frontend
     1.  `frontend/**/*.spec.js`
 2.  Unit and functional tests of the badge renderer
-    1.  `gh-badges/**/*.spec.js`
+    1.  `badge-maker/**/*.spec.js`
 3.  Unit and functional tests of the core code
     1.  `core/**/*.spec.js`
 4.  Unit and functional tests of the service helper functions
@@ -125,10 +125,9 @@ test this kind of logic through unit tests (e.g. of `render()` and
     registered.)
 2.  Scoutcamp invokes a callback with the four parameters:
     `( queryParams, match, end, ask )`. This callback is defined in
-    [`legacy-request-handler`][legacy-request-handler]. If the badge result
-    is found in a relatively small in-memory cache, the response is sent
-    immediately. Otherwise a timeout is set to handle unresponsive service
-    code and the next callback is invoked: the legacy handler function.
+    [`legacy-request-handler`][legacy-request-handler]. A timeout is set to
+    handle unresponsive service code and the next callback is invoked: the
+    legacy handler function.
 3.  The legacy handler function receives
     `( queryParams, match, sendBadge, request )`. Its job is to extract data
     from the regex `match` and `queryParams`, invoke `request` to fetch
@@ -162,8 +161,8 @@ test this kind of logic through unit tests (e.g. of `render()` and
     service’s defaults to produce an object that fully describes the badge to
     be rendered.
 9.  `sendBadge` is invoked with that object. It does some housekeeping on the
-    timeout and caches the result. Then it renders the badge to svg or raster
-    and pushes out the result over the HTTPS connection.
+    timeout. Then it renders the badge to svg or raster and pushes out the
+    result over the HTTPS connection.
 
 [error reporting]: https://github.com/badges/shields/blob/master/doc/production-hosting.md#error-reporting
 [coalescebadge]: https://github.com/badges/shields/blob/master/core/base-service/coalesce-badge.js

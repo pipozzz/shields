@@ -1,8 +1,17 @@
-'use strict'
+import Joi from 'joi'
+import { isMetric } from '../test-validators.js'
+import { createServiceTester } from '../tester.js'
+export const t = await createServiceTester()
 
-const Joi = require('@hapi/joi')
-const { isMetric } = require('../test-validators')
-const t = (module.exports = require('../tester').createServiceTester())
+const mockLatestRelease = release => nock =>
+  nock('https://api.github.com')
+    .get('/repos/photonstorm/phaser/releases/latest')
+    .reply(200, release)
+
+const mockReleases = releases => nock =>
+  nock('https://api.github.com')
+    .get('/repos/photonstorm/phaser/releases')
+    .reply(200, releases)
 
 t.create('Downloads all releases')
   .get('/downloads/photonstorm/phaser/total.json')
@@ -28,9 +37,124 @@ t.create('downloads for latest release')
   .get('/downloads/photonstorm/phaser/latest/total.json')
   .expectBadge({ label: 'downloads@latest', message: isMetric })
 
+t.create('downloads for latest release (sort by date)')
+  .get('/downloads/photonstorm/phaser/latest/total.json')
+  .intercept(
+    mockLatestRelease({
+      assets: [
+        { name: 'phaser.js', download_count: 5 },
+        { name: 'phaser.min.js', download_count: 7 },
+      ],
+      tag_name: 'v3.15.1',
+      prerelease: false,
+    })
+  )
+  .expectBadge({ label: 'downloads@latest', message: '12' })
+
+t.create('downloads for latest release (sort by SemVer)')
+  .get('/downloads/photonstorm/phaser/latest/total.json?sort=semver')
+  .intercept(
+    mockReleases([
+      {
+        assets: [
+          { name: 'phaser.js', download_count: 1 },
+          { name: 'phaser.min.js', download_count: 3 },
+        ],
+        tag_name: 'v3.16.0-rc1',
+        prerelease: true,
+      },
+      {
+        assets: [
+          { name: 'phaser.js', download_count: 5 },
+          { name: 'phaser.min.js', download_count: 7 },
+        ],
+        tag_name: 'v3.15.0',
+        prerelease: false,
+      },
+      {
+        assets: [
+          { name: 'phaser.js', download_count: 9 },
+          { name: 'phaser.min.js', download_count: 11 },
+        ],
+        tag_name: 'v3.15.1',
+        prerelease: false,
+      },
+    ])
+  )
+  .expectBadge({ label: 'downloads@latest', message: '20' })
+
+t.create('downloads for latest release (sort by date including pre-releases)')
+  .get('/downloads-pre/photonstorm/phaser/latest/total.json')
+  .intercept(
+    mockReleases([
+      {
+        assets: [
+          { name: 'phaser.js', download_count: 1 },
+          { name: 'phaser.min.js', download_count: 3 },
+        ],
+        tag_name: 'v3.16.0-rc1',
+        prerelease: true,
+      },
+      {
+        assets: [
+          { name: 'phaser.js', download_count: 5 },
+          { name: 'phaser.min.js', download_count: 7 },
+        ],
+        tag_name: 'v3.15.0',
+        prerelease: false,
+      },
+      {
+        assets: [
+          { name: 'phaser.js', download_count: 9 },
+          { name: 'phaser.min.js', download_count: 11 },
+        ],
+        tag_name: 'v3.15.1',
+        prerelease: false,
+      },
+    ])
+  )
+  .expectBadge({ label: 'downloads@latest', message: '4' })
+
+t.create('downloads for latest release (sort by SemVer including pre-releases)')
+  .get('/downloads-pre/photonstorm/phaser/latest/total.json?sort=semver')
+  .intercept(
+    mockReleases([
+      {
+        assets: [
+          { name: 'phaser.js', download_count: 9 },
+          { name: 'phaser.min.js', download_count: 11 },
+        ],
+        tag_name: 'v3.15.1',
+        prerelease: false,
+      },
+      {
+        assets: [
+          { name: 'phaser.js', download_count: 1 },
+          { name: 'phaser.min.js', download_count: 3 },
+        ],
+        tag_name: 'v3.16.0-rc1',
+        prerelease: true,
+      },
+      {
+        assets: [
+          { name: 'phaser.js', download_count: 5 },
+          { name: 'phaser.min.js', download_count: 7 },
+        ],
+        tag_name: 'v3.15.0',
+        prerelease: false,
+      },
+    ])
+  )
+  .expectBadge({ label: 'downloads@latest', message: '4' })
+
 t.create('downloads-pre for latest release')
   .get('/downloads-pre/photonstorm/phaser/latest/total.json')
   .expectBadge({ label: 'downloads@latest', message: isMetric })
+
+// https://github.com/badges/shields/issues/3786
+t.create('downloads-pre for latest release (no-releases)')
+  .get('/downloads-pre/badges/shields/latest/total.json')
+  .expectBadge({ label: 'downloads', message: 'no releases' })
 
 t.create('downloads for release without slash')
   .get('/downloads/atom/atom/v0.190.0/total.json')

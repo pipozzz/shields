@@ -1,9 +1,6 @@
-'use strict'
-
-const { metric } = require('../text-formatters')
-const { downloadCount } = require('../color-formatters')
-const { BaseAmoService, keywords } = require('./amo-base')
-const { redirector } = require('..')
+import { renderDownloadsBadge } from '../downloads.js'
+import { redirector } from '../index.js'
+import { BaseAmoService, keywords } from './amo-base.js'
 
 const documentation = `
 <p>
@@ -14,38 +11,23 @@ const documentation = `
 `
 
 class AmoWeeklyDownloads extends BaseAmoService {
-  static get category() {
-    return 'downloads'
-  }
+  static category = 'downloads'
+  static route = { base: 'amo/dw', pattern: ':addonId' }
 
-  static get route() {
-    return {
-      base: 'amo/dw',
-      pattern: ':addonId',
-    }
-  }
+  static examples = [
+    {
+      title: 'Mozilla Add-on',
+      namedParams: { addonId: 'dustman' },
+      staticPreview: this.render({ downloads: 120 }),
+      keywords,
+      documentation,
+    },
+  ]
 
-  static get examples() {
-    return [
-      {
-        title: 'Mozilla Add-on',
-        namedParams: { addonId: 'dustman' },
-        staticPreview: this.render({ downloads: 120 }),
-        keywords,
-        documentation,
-      },
-    ]
-  }
-
-  static get defaultBadgeData() {
-    return { label: 'downloads' }
-  }
+  static defaultBadgeData = { label: 'downloads' }
 
   static render({ downloads }) {
-    return {
-      message: `${metric(downloads)}/week`,
-      color: downloadCount(downloads),
-    }
+    return renderDownloadsBadge({ downloads, interval: 'week' })
   }
 
   async handle({ addonId }) {
@@ -66,7 +48,4 @@ const AmoLegacyRedirect = redirector({
   dateAdded: new Date('2019-02-23'),
 })
 
-module.exports = {
-  AmoWeeklyDownloads,
-  AmoLegacyRedirect,
-}
+export { AmoWeeklyDownloads, AmoLegacyRedirect }

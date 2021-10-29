@@ -1,9 +1,7 @@
-'use strict'
+import { test, given } from 'sazerac'
+import Maintenance from './maintenance.service.js'
 
-const { test, given } = require('sazerac')
-const Maintenance = require('./maintenance.service')
-
-describe('Maintenance', function() {
+describe('Maintenance', function () {
   test(Maintenance.prototype.transform, () => {
     given({
       maintained: 'no',

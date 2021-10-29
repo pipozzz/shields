@@ -1,8 +1,18 @@
-'use strict'
+import Joi from 'joi'
+import { BaseJsonService, NotFound } from '../index.js'
+import { isLegacyVersion } from './sonar-helpers.js'
 
-const Joi = require('@hapi/joi')
-const { isLegacyVersion } = require('./sonar-helpers')
-const { BaseJsonService } = require('..')
+// It is possible to see HTTP 404 response codes and HTTP 200 responses
+// with empty arrays of metric values, with both the legacy (pre v5.3) and modern APIs.
+//
+// 404 responses can occur with non-existent component keys, as well as unknown/unsupported metrics.
+//
+// 200 responses with empty arrays can occur when the metric key is valid, but the data
+// is unavailable for the specified component, for example using the metric key `tests` with a
+// component that is not capturing test results.
+// It can also happen when using an older/deprecated
+// metric key with a newer version of Sonar, for example using the metric key
+// `public_documented_api_density` with SonarQube v7.x or higher
 
 const modernSchema = Joi.object({
   component: Joi.object({
@@ -14,8 +24,9 @@ const modernSchema = Joi.object({
             Joi.number().min(0),
             Joi.allow('OK', 'ERROR')
           ).required(),
-        }).required()
+        })
       )
+      .min(0)
       .required(),
   }).required(),
 }).required()
@@ -31,19 +42,17 @@ const legacySchema = Joi.array()
               Joi.number().min(0),
               Joi.allow('OK', 'ERROR')
             ).required(),
-          }).required()
+          })
         )
         .required(),
     }).required()
   )
   .required()
 
-module.exports = class SonarBase extends BaseJsonService {
-  static get auth() {
-    return { userKey: 'sonarqube_token' }
-  }
+export default class SonarBase extends BaseJsonService {
+  static auth = { userKey: 'sonarqube_token', serviceKey: 'sonar' }
 
-  async fetch({ sonarVersion, server, component, metricName }) {
+  async fetch({ sonarVersion, server, component, metricName, branch }) {
     const useLegacyApi = isLegacyVersion({ sonarVersion })
 
     let qs, url, schema
@@ -55,27 +64,31 @@ module.exports = class SonarBase extends BaseJsonService {
         depth: 0,
         metrics: metricName,
         includeTrends: true,
+        branch,
       }
     } else {
       schema = modernSchema
       url = `${server}/api/measures/component`
+      // componentKey query param was renamed in version 6.6
+      const componentKey =
+        parseFloat(sonarVersion) >= 6.6 ? 'component' : 'componentKey'
       qs = {
-        componentKey: component,
+        [componentKey]: component,
         metricKeys: metricName,
+        branch,
       }
     }
 
-    return this._requestJson({
-      schema,
-      url,
-      options: {
-        qs,
-        auth: this.authHelper.basicAuth,
-      },
-      errorMessages: {
-        404: 'component or metric not found, or legacy API not supported',
-      },
-    })
+    return this._requestJson(
+      this.authHelper.withBasicAuth({
+        schema,
+        url,
+        options: { qs },
+        errorMessages: {
+          404: 'component or metric not found, or legacy API not supported',
+        },
+      })
+    )
   }
 
   transform({ json, sonarVersion }) {
@@ -83,12 +96,22 @@ module.exports = class SonarBase extends BaseJsonService {
     const metrics = {}
 
     if (useLegacyApi) {
-      json[0].msr.forEach(measure => {
+      const [{ msr: measures }] = json
+      if (!measures.length) {
+        throw new NotFound({ prettyMessage: 'metric not found' })
+      }
+      measures.forEach(measure => {
         // Most values are numeric, but not all of them.
         metrics[measure.key] = parseInt(measure.val) || measure.val
       })
     } else {
-      json.component.measures.forEach(measure => {
+      const {
+        component: { measures },
+      } = json
+      if (!measures.length) {
+        throw new NotFound({ prettyMessage: 'metric not found' })
+      }
+      measures.forEach(measure => {
         // Most values are numeric, but not all of them.
         metrics[measure.metric] = parseInt(measure.value) || measure.value
       })

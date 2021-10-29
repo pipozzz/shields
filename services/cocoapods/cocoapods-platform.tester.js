@@ -1,18 +1,15 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const t = (module.exports = require('../tester').createServiceTester())
+import Joi from 'joi'
+import { createServiceTester } from '../tester.js'
+export const t = await createServiceTester()
 
 const isPlatform = Joi.string().regex(
   /^(osx|ios|tvos|watchos)( \| (osx|ios|tvos|watchos))*$/
 )
 
-t.create('platform (valid)')
-  .get('/AFNetworking.json')
-  .expectBadge({
-    label: 'platform',
-    message: isPlatform,
-  })
+t.create('platform (valid)').get('/AFNetworking.json').expectBadge({
+  label: 'platform',
+  message: isPlatform,
+})
 
 t.create('platform (not found)')
   .get('/not-a-package.json')

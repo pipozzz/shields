@@ -1,14 +1,11 @@
-'use strict'
+import { isVPlusDottedVersionAtLeastOne } from '../test-validators.js'
+import { createServiceTester } from '../tester.js'
+export const t = await createServiceTester()
 
-const { isVPlusDottedVersionAtLeastOne } = require('../test-validators')
-const t = (module.exports = require('../tester').createServiceTester())
-
-t.create('Version')
-  .get('/alhjnofcnnpeaphgeakdhkebafjcpeae.json')
-  .expectBadge({
-    label: 'chrome web store',
-    message: isVPlusDottedVersionAtLeastOne,
-  })
+t.create('Version').get('/alhjnofcnnpeaphgeakdhkebafjcpeae.json').expectBadge({
+  label: 'chrome web store',
+  message: isVPlusDottedVersionAtLeastOne,
+})
 
 t.create('Version (not found)')
   .get('/invalid-name-of-addon.json')

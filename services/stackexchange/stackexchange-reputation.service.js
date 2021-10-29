@@ -1,51 +1,41 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const { metric } = require('../text-formatters')
-const { floorCount: floorCountColor } = require('../color-formatters')
-const { BaseJsonService } = require('..')
+import Joi from 'joi'
+import { metric } from '../text-formatters.js'
+import { floorCount as floorCountColor } from '../color-formatters.js'
+import { BaseJsonService } from '../index.js'
 
 const reputationSchema = Joi.object({
   items: Joi.array()
     .length(1)
     .items(
       Joi.object({
-        reputation: Joi.number()
-          .min(0)
-          .required(),
+        reputation: Joi.number().min(0).required(),
       })
     )
     .required(),
 }).required()
 
-module.exports = class StackExchangeReputation extends BaseJsonService {
-  static get category() {
-    return 'chat'
+export default class StackExchangeReputation extends BaseJsonService {
+  static category = 'chat'
+
+  static route = {
+    base: 'stackexchange',
+    pattern: ':stackexchangesite/r/:query',
   }
 
-  static get route() {
-    return {
-      base: 'stackexchange',
-      pattern: ':stackexchangesite/r/:query',
-    }
-  }
+  static examples = [
+    {
+      title: 'Stack Exchange reputation',
+      namedParams: { stackexchangesite: 'stackoverflow', query: '123' },
+      staticPreview: this.render({
+        stackexchangesite: 'stackoverflow',
+        numValue: 10,
+      }),
+      keywords: ['stackexchange', 'stackoverflow'],
+    },
+  ]
 
-  static get examples() {
-    return [
-      {
-        title: 'Stack Exchange reputation',
-        namedParams: { stackexchangesite: 'stackoverflow', query: '123' },
-        staticPreview: this.render({
-          stackexchangesite: 'stackoverflow',
-          numValue: 10,
-        }),
-        keywords: ['stackexchange', 'stackoverflow'],
-      },
-    ]
-  }
-
-  static get defaultBadgeData() {
-    return { label: 'stackoverflow' }
+  static defaultBadgeData = {
+    label: 'stackoverflow',
   }
 
   static render({ stackexchangesite, numValue }) {

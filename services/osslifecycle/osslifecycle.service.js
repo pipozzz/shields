@@ -1,64 +1,58 @@
-'use strict'
-
-const { BaseService, InvalidResponse } = require('..')
+import { BaseService, InvalidResponse } from '../index.js'
 
 const documentation = `
 <p>
   OSS Lifecycle is an initiative started by Netflix to classify open-source projects into lifecycles
-  and clearly identify which projects are active and which ones are retired. To enable this badge, 
-  simply create an OSSMETADATA tagging file at the root of your GitHub repository containing a 
-  single line similar to the following: <code>osslifecycle=active</code>. Other suggested values are 
-  <code>osslifecycle=maintenance</code> and <code>osslifecycle=archived</code>. A working example 
+  and clearly identify which projects are active and which ones are retired. To enable this badge,
+  simply create an OSSMETADATA tagging file at the root of your GitHub repository containing a
+  single line similar to the following: <code>osslifecycle=active</code>. Other suggested values are
+  <code>osslifecycle=maintenance</code> and <code>osslifecycle=archived</code>. A working example
   can be viewed on the <a href="https://github.com/Netflix/osstracker">OSS Tracker repository</a>.
 </p>
 `
 
-module.exports = class OssTracker extends BaseService {
-  static get category() {
-    return 'other'
+export default class OssTracker extends BaseService {
+  static category = 'other'
+
+  static route = {
+    base: 'osslifecycle',
+    pattern: ':user/:repo/:branch*',
   }
 
-  static get route() {
-    return {
-      base: 'osslifecycle',
-      pattern: ':user/:repo/:branch*',
-    }
-  }
-
-  static get examples() {
-    return [
-      {
-        title: 'OSS Lifecycle',
-        pattern: ':user/:repo',
-        namedParams: { user: 'Teevity', repo: 'ice' },
-        staticPreview: this.render({ status: 'active' }),
-        keywords: ['Netflix'],
-        documentation,
+  static examples = [
+    {
+      title: 'OSS Lifecycle',
+      pattern: ':user/:repo',
+      namedParams: { user: 'Teevity', repo: 'ice' },
+      staticPreview: this.render({ status: 'active' }),
+      keywords: ['Netflix'],
+      documentation,
+    },
+    {
+      title: 'OSS Lifecycle (branch)',
+      pattern: ':user/:repo/:branch',
+      namedParams: {
+        user: 'Netflix',
+        repo: 'osstracker',
+        branch: 'documentation',
       },
-      {
-        title: 'OSS Lifecycle (branch)',
-        pattern: ':user/:repo/:branch',
-        namedParams: {
-          user: 'Netflix',
-          repo: 'osstracker',
-          branch: 'documentation',
-        },
-        staticPreview: this.render({ status: 'active' }),
-        keywords: ['Netflix'],
-        documentation,
-      },
-    ]
-  }
+      staticPreview: this.render({ status: 'active' }),
+      keywords: ['Netflix'],
+      documentation,
+    },
+  ]
 
-  static get defaultBadgeData() {
-    return { label: 'oss lifecycle' }
-  }
+  static defaultBadgeData = { label: 'oss lifecycle' }
 
   /**
    * Return color for active, maintenance and archived statuses, which were the three
    * example keywords used in Netflix's open-source meetup.
    * See https://slideshare.net/aspyker/netflix-open-source-meetup-season-4-episode-1
    * Other keywords are possible, but will appear in grey.
+   *
+   * @param {object} attrs Refer to individual attrs
+   * @param {string} attrs.status Specifies the current maintenance status
+   * @returns {string} color
    */
   static getColor({ status }) {
     if (status === 'active') {
@@ -89,7 +83,7 @@ module.exports = class OssTracker extends BaseService {
     const { buffer } = await this.fetch({
       user,
       repo,
-      branch: branch || 'master',
+      branch: branch || 'HEAD',
     })
     try {
       const status = buffer.match(/osslifecycle=([a-z]+)/im)[1]

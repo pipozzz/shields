@@ -1,12 +1,10 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const {
+import Joi from 'joi'
+import {
   minorVersion,
   versionReduction,
   getPhpReleases,
-} = require('../php-version')
-const { BaseJsonService } = require('..')
+} from '../php-version.js'
+import { BaseJsonService } from '../index.js'
 
 const optionalNumberOrString = Joi.alternatives(Joi.string(), Joi.number())
 const schema = Joi.object({
@@ -16,36 +14,31 @@ const schema = Joi.object({
       matrix: Joi.object({
         include: Joi.array().items(Joi.object({ php: optionalNumberOrString })),
       }),
+      jobs: Joi.object({
+        include: Joi.array().items(Joi.object({ php: optionalNumberOrString })),
+      }),
     }).required(),
   }).required(),
 }).required()
 
-module.exports = class TravisPhpVersion extends BaseJsonService {
-  static get category() {
-    return 'platform-support'
+export default class TravisPhpVersion extends BaseJsonService {
+  static category = 'platform-support'
+
+  static route = {
+    base: 'travis/php-v',
+    pattern: ':user/:repo/:branch+',
   }
 
-  static get route() {
-    return {
-      base: 'travis/php-v',
-      pattern: ':user/:repo/:branch*',
-    }
-  }
+  static examples = [
+    {
+      title: 'PHP version from Travis config',
+      namedParams: { user: 'yiisoft', repo: 'yii', branch: 'master' },
+      staticPreview: this.render({ reduction: ['5.3 - 7.4'] }),
+    },
+  ]
 
-  static get examples() {
-    return [
-      {
-        title: 'PHP from Travis config',
-        namedParams: { user: 'symfony', repo: 'symfony' },
-        staticPreview: this.render({ reduction: ['^7.1.3'] }),
-      },
-    ]
-  }
-
-  static get defaultBadgeData() {
-    return {
-      label: 'php',
-    }
+  static defaultBadgeData = {
+    label: 'php',
   }
 
   static render({ reduction, hasHhvm }) {
@@ -73,6 +66,12 @@ module.exports = class TravisPhpVersion extends BaseJsonService {
         config.matrix.include.filter(v => 'php' in v).map(v => v.php.toString())
       )
     }
+    // from jobs
+    if (config.jobs && config.jobs.include) {
+      travisVersions = travisVersions.concat(
+        config.jobs.include.filter(v => 'php' in v).map(v => v.php.toString())
+      )
+    }
 
     const versions = travisVersions
       .map(v => minorVersion(v))
@@ -87,7 +86,7 @@ module.exports = class TravisPhpVersion extends BaseJsonService {
     }
   }
 
-  async handle({ user, repo, branch = 'master' }) {
+  async handle({ user, repo, branch }) {
     const travisConfig = await this._requestJson({
       schema,
       url: `https://api.travis-ci.org/repos/${user}/${repo}/branches/${branch}`,

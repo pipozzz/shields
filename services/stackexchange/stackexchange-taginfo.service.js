@@ -1,51 +1,41 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const renderQuestionsBadge = require('./stackexchange-helpers')
-const { BaseJsonService } = require('..')
+import Joi from 'joi'
+import { BaseJsonService } from '../index.js'
+import renderQuestionsBadge from './stackexchange-helpers.js'
 
 const tagSchema = Joi.object({
   items: Joi.array()
     .length(1)
     .items(
       Joi.object({
-        count: Joi.number()
-          .min(0)
-          .required(),
+        count: Joi.number().min(0).required(),
       })
     )
     .required(),
 }).required()
 
-module.exports = class StackExchangeQuestions extends BaseJsonService {
-  static get category() {
-    return 'chat'
+export default class StackExchangeQuestions extends BaseJsonService {
+  static category = 'chat'
+
+  static route = {
+    base: 'stackexchange',
+    pattern: ':stackexchangesite/t/:query',
   }
 
-  static get route() {
-    return {
-      base: 'stackexchange',
-      pattern: ':stackexchangesite/t/:query',
-    }
-  }
+  static examples = [
+    {
+      title: 'Stack Exchange questions',
+      namedParams: { stackexchangesite: 'stackoverflow', query: 'gson' },
+      staticPreview: this.render({
+        stackexchangesite: 'stackoverflow',
+        query: 'gson',
+        numValue: 10,
+      }),
+      keywords: ['stackexchange', 'stackoverflow'],
+    },
+  ]
 
-  static get examples() {
-    return [
-      {
-        title: 'Stack Exchange questions',
-        namedParams: { stackexchangesite: 'stackoverflow', query: 'gson' },
-        staticPreview: this.render({
-          stackexchangesite: 'stackoverflow',
-          query: 'gson',
-          numValue: 10,
-        }),
-        keywords: ['stackexchange', 'stackoverflow'],
-      },
-    ]
-  }
-
-  static get defaultBadgeData() {
-    return { label: 'stackoverflow' }
+  static defaultBadgeData = {
+    label: 'stackoverflow',
   }
 
   static render(props) {

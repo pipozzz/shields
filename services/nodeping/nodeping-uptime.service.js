@@ -1,21 +1,14 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const { colorScale } = require('../color-formatters')
-const { BaseJsonService } = require('..')
+import Joi from 'joi'
+import { colorScale } from '../color-formatters.js'
+import { BaseJsonService } from '../index.js'
 
 const colorFormatter = colorScale([99, 99.5, 100])
 
 const rowSchema = Joi.object().keys({
-  uptime: Joi.number()
-    .precision(3)
-    .min(0)
-    .max(100),
+  uptime: Joi.number().precision(3).min(0).max(100),
 })
 
-const schema = Joi.array()
-  .items(rowSchema)
-  .min(1)
+const schema = Joi.array().items(rowSchema).min(1)
 
 /*
  * this is the checkUuid for the NodePing.com (as used on the [example page](https://nodeping.com/reporting.html#results))
@@ -28,35 +21,20 @@ const sampleCheckUuid = 'jkiwn052-ntpp-4lbb-8d45-ihew6d9ucoei'
 // TODO: support for custom '100%' label
 // TODO: support for custom # of decimal places
 
-module.exports = class NodePingUptime extends BaseJsonService {
-  static get category() {
-    return 'monitoring'
-  }
+export default class NodePingUptime extends BaseJsonService {
+  static category = 'monitoring'
 
-  static get route() {
-    return {
-      base: 'nodeping/uptime',
-      pattern: ':checkUuid',
-    }
-  }
+  static route = { base: 'nodeping/uptime', pattern: ':checkUuid' }
 
-  static get examples() {
-    return [
-      {
-        title: 'NodePing uptime',
-        namedParams: {
-          checkUuid: sampleCheckUuid,
-        },
-        staticPreview: this.render({ uptime: 99.999 }),
-      },
-    ]
-  }
+  static examples = [
+    {
+      title: 'NodePing uptime',
+      namedParams: { checkUuid: sampleCheckUuid },
+      staticPreview: this.render({ uptime: 99.999 }),
+    },
+  ]
 
-  static get defaultBadgeData() {
-    return {
-      label: 'Uptime',
-    }
-  }
+  static defaultBadgeData = { label: 'uptime' }
 
   static formatPercentage(uptime) {
     if (uptime === 100.0) {

@@ -1,11 +1,9 @@
-'use strict'
+import Joi from 'joi'
+import { createServiceTester } from '../tester.js'
+export const t = await createServiceTester()
 
-const Joi = require('@hapi/joi')
-const t = (module.exports = require('../tester').createServiceTester())
-
-// These regexes are the same, but declared separately for clarity.
 const isPipeSeparatedPythonVersions = Joi.string().regex(
-  /^([0-9]+\.[0-9]+(?: \| )?)+$/
+  /^([1-9]\.[0-9]+(?: \| )?)+$/
 )
 
 t.create('python versions (valid, package version in request)')

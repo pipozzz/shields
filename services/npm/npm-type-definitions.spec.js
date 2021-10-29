@@ -1,14 +1,14 @@
-'use strict'
+import { test, given, forCases } from 'sazerac'
+import NpmTypeDefinitions from './npm-type-definitions.service.js'
 
-const { test, given, forCases } = require('sazerac')
-const NpmTypeDefinitions = require('./npm-type-definitions.service')
-
-describe('NPM type definitions badge', function() {
+describe('NPM type definitions badge', function () {
   test(NpmTypeDefinitions.transform, () => {
     forCases([
       given({ devDependencies: { typescript: '^2.4.7' }, files: [] }),
       given({ devDependencies: {}, types: 'types/index.d.ts', files: [] }),
       given({ devDependencies: {}, types: 'types/index.d.ts', files: [] }),
+      given({ devDependencies: {}, typings: 'index.d.ts', files: [] }),
+      given({ devDependencies: {}, files: ['index.js', 'index.d.ts'] }),
     ]).expect({ supportedLanguages: ['TypeScript'] })
 
     given({ devDependencies: { 'flow-bin': '1.2.3' }, files: [] }).expect({

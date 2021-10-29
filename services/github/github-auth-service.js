@@ -1,10 +1,6 @@
-'use strict'
-
-const gql = require('graphql-tag')
-const { mergeQueries } = require('../../core/base-service/graphql')
-const { staticAuthConfigured } = require('./github-helpers')
-const { BaseJsonService } = require('..')
-const { BaseGraphqlService } = require('..')
+import gql from 'graphql-tag'
+import { mergeQueries } from '../../core/base-service/graphql.js'
+import { BaseGraphqlService, BaseJsonService } from '../index.js'
 
 function createRequestFetcher(context, config) {
   const { sendAndCacheRequestWithCallbacks, githubApiProvider } = context
@@ -33,7 +29,7 @@ class GithubAuthV3Service extends BaseJsonService {
 class ConditionalGithubAuthV3Service extends BaseJsonService {
   constructor(context, config) {
     super(context, config)
-    if (staticAuthConfigured()) {
+    if (context.githubApiProvider.globalToken) {
       this._requestFetcher = createRequestFetcher(context, config)
       this.staticAuthConfigured = true
     } else {
@@ -91,7 +87,7 @@ All other things being equal, a graphql query will almost always be a smaller
 number of bytes over the wire and a smaller/simpler object to parse.
 */
 
-module.exports = {
+export {
   GithubAuthV3Service,
   ConditionalGithubAuthV3Service,
   GithubAuthV4Service,

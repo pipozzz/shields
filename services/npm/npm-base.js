@@ -1,9 +1,7 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const { optionalUrl } = require('../validators')
-const { isDependencyMap } = require('../package-json-helpers')
-const { BaseJsonService, InvalidResponse, NotFound } = require('..')
+import Joi from 'joi'
+import { optionalUrl } from '../validators.js'
+import { isDependencyMap } from '../package-json-helpers.js'
+import { BaseJsonService, InvalidResponse, NotFound } from '../index.js'
 
 const deprecatedLicenseObjectSchema = Joi.object({
   type: Joi.string().required(),
@@ -25,27 +23,30 @@ const packageDataSchema = Joi.object({
     .items(Joi.object({}))
     .required(),
   types: Joi.string(),
-  files: Joi.array()
-    .items(Joi.string())
-    .default([]),
+  // `typings` is an alias for `types` and often used
+  // https://www.typescriptlang.org/docs/handbook/declaration-files/publishing.html#including-declarations-in-your-npm-package
+  // > Note that the "typings" field is synonymous with "types"
+  typings: Joi.string(),
+  files: Joi.array().items(Joi.string()).default([]),
 }).required()
 
-const queryParamSchema = Joi.object({
+export const queryParamSchema = Joi.object({
   registry_uri: optionalUrl,
 }).required()
 
 // Abstract class for NPM badges which display data about the latest version
 // of a package.
-module.exports = class NpmBase extends BaseJsonService {
-  static get auth() {
-    return { passKey: 'npm_token' }
+export default class NpmBase extends BaseJsonService {
+  static auth = {
+    passKey: 'npm_token',
+    serviceKey: 'npm',
   }
 
   static buildRoute(base, { withTag } = {}) {
     if (withTag) {
       return {
         base,
-        pattern: ':scope(@[^/]+)?/:packageName/:tag?',
+        pattern: ':scope(@[^/]+)?/:packageName/:tag*',
         queryParamSchema,
       }
     } else {
@@ -77,27 +78,32 @@ module.exports = class NpmBase extends BaseJsonService {
   }
 
   async _requestJson(data) {
-    return super._requestJson({
-      ...data,
-      options: {
-        headers: {
-          // Use a custom Accept header because of this bug:
-          // <https://github.com/npm/npmjs.org/issues/163>
-          Accept: '*/*',
-          ...this.authHelper.bearerAuthHeader,
+    return super._requestJson(
+      this.authHelper.withBearerAuthHeader({
+        ...data,
+        options: {
+          headers: {
+            // Use a custom Accept header because of this bug:
+            // <https://github.com/npm/npmjs.org/issues/163>
+            Accept: '*/*',
+          },
         },
-      },
-    })
+      })
+    )
   }
 
   async fetchPackageData({ registryUrl, scope, packageName, tag }) {
     registryUrl = registryUrl || this.constructor.defaultRegistryUrl
     let url
-    if (scope === undefined) {
+    if (scope === undefined && tag === undefined) {
       // e.g. https://registry.npmjs.org/express/latest
       // Use this endpoint as an optimization. It covers the vast majority of
       // these badges, and the response is smaller.
       url = `${registryUrl}/${packageName}/latest`
+    } else if (scope === undefined && tag !== undefined) {
+      // e.g. https://registry.npmjs.org/express
+      // because https://registry.npmjs.org/express/canary does not work
+      url = `${registryUrl}/${packageName}`
     } else {
       // e.g. https://registry.npmjs.org/@cedx%2Fgulp-david
       // because https://registry.npmjs.org/@cedx%2Fgulp-david/latest does not work
@@ -115,7 +121,7 @@ module.exports = class NpmBase extends BaseJsonService {
     })
 
     let packageData
-    if (scope === undefined) {
+    if (scope === undefined && tag === undefined) {
       packageData = json
     } else {
       const registryTag = tag || 'latest'
@@ -135,5 +141,3 @@ module.exports = class NpmBase extends BaseJsonService {
     return this.constructor._validate(packageData, packageDataSchema)
   }
 }
-
-module.exports.queryParamSchema = queryParamSchema

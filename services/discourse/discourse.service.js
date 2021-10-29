@@ -1,10 +1,8 @@
-'use strict'
-
-const camelcase = require('camelcase')
-const Joi = require('@hapi/joi')
-const { metric } = require('../text-formatters')
-const { nonNegativeInteger } = require('../validators')
-const { BaseJsonService } = require('..')
+import camelcase from 'camelcase'
+import Joi from 'joi'
+import { metric } from '../text-formatters.js'
+import { nonNegativeInteger, optionalUrl } from '../validators.js'
+import { BaseJsonService } from '../index.js'
 
 const schema = Joi.object({
   topic_count: nonNegativeInteger,
@@ -13,56 +11,48 @@ const schema = Joi.object({
   like_count: nonNegativeInteger,
 }).required()
 
+const queryParamSchema = Joi.object({
+  server: optionalUrl.required(),
+}).required()
+
 class DiscourseBase extends BaseJsonService {
-  static get category() {
-    return 'chat'
-  }
+  static category = 'chat'
 
   static buildRoute(metric) {
     return {
       base: 'discourse',
-      // Do not base new services on this route pattern.
-      // See https://github.com/badges/shields/issues/3714
-      pattern: `:scheme(http|https)/:host/${metric}`,
+      pattern: metric,
+      queryParamSchema,
     }
   }
 
-  static get defaultBadgeData() {
-    return { label: 'discourse' }
-  }
+  static defaultBadgeData = { label: 'discourse' }
 
-  async fetch({ scheme, host }) {
+  async fetch({ server }) {
     return this._requestJson({
       schema,
-      url: `${scheme}://${host}/site/statistics.json`,
+      url: `${server}/site/statistics.json`,
     })
   }
 }
 
 function DiscourseMetricIntegrationFactory({ metricName, property }) {
   return class DiscourseMetric extends DiscourseBase {
-    static get name() {
-      // The space is needed so we get 'DiscourseTopics' rather than
-      // 'Discoursetopics'. `camelcase()` removes it.
-      return camelcase(`Discourse ${metricName}`, { pascalCase: true })
-    }
+    // The space is needed so we get 'DiscourseTopics' rather than
+    // 'Discoursetopics'. `camelcase()` removes it.
+    static name = camelcase(`Discourse ${metricName}`, { pascalCase: true })
+    static route = this.buildRoute(metricName)
 
-    static get route() {
-      return this.buildRoute(metricName)
-    }
-
-    static get examples() {
-      return [
-        {
-          title: `Discourse ${metricName}`,
-          namedParams: {
-            scheme: 'https',
-            host: 'meta.discourse.org',
-          },
-          staticPreview: this.render({ stat: 100 }),
+    static examples = [
+      {
+        title: `Discourse ${metricName}`,
+        namedParams: {},
+        queryParams: {
+          server: 'https://meta.discourse.org',
         },
-      ]
-    }
+        staticPreview: this.render({ stat: 100 }),
+      },
+    ]
 
     static render({ stat }) {
       return {
@@ -71,30 +61,25 @@ function DiscourseMetricIntegrationFactory({ metricName, property }) {
       }
     }
 
-    async handle({ scheme, host }) {
-      const data = await this.fetch({ scheme, host })
+    async handle(_routeParams, { server }) {
+      const data = await this.fetch({ server })
       return this.constructor.render({ stat: data[property] })
     }
   }
 }
 
 class DiscourseStatus extends DiscourseBase {
-  static get route() {
-    return this.buildRoute('status')
-  }
-
-  static get examples() {
-    return [
-      {
-        title: `Discourse status`,
-        namedParams: {
-          scheme: 'https',
-          host: 'meta.discourse.org',
-        },
-        staticPreview: this.render(),
+  static route = this.buildRoute('status')
+  static examples = [
+    {
+      title: `Discourse status`,
+      namedParams: {},
+      queryParams: {
+        server: 'https://meta.discourse.org',
       },
-    ]
-  }
+      staticPreview: this.render(),
+    },
+  ]
 
   static render() {
     return {
@@ -103,8 +88,8 @@ class DiscourseStatus extends DiscourseBase {
     }
   }
 
-  async handle({ scheme, host }) {
-    await this.fetch({ scheme, host })
+  async handle(_routeParams, { server }) {
+    await this.fetch({ server })
     // if fetch() worked, the server is up
     // if it failed, we'll show an error e.g: 'inaccessible'
     return this.constructor.render()
@@ -118,4 +103,4 @@ const metricIntegrations = [
   { metricName: 'likes', property: 'like_count' },
 ].map(DiscourseMetricIntegrationFactory)
 
-module.exports = [...metricIntegrations, DiscourseStatus]
+export default [...metricIntegrations, DiscourseStatus]

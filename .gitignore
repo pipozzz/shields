@@ -7,7 +7,7 @@
 /private
 /index.html
 /shields.env
-gh-badges/package-lock.json
+badge-maker/package-lock.json
 
 # Folder view configuration files
 .DS_Store
@@ -104,7 +104,8 @@ service-definitions.yml
 !/config/local*.template.yml
 
 # Gatsby
-/.cache
+/frontend/.cache
+/frontend/public
 /public
 
 # Cypress
@@ -113,3 +114,6 @@ service-definitions.yml
 
 # Rendered API docs
 /api-docs/
+
+# Flamebearer
+flamegraph.html

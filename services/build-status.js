@@ -1,6 +1,4 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
+import Joi from 'joi'
 
 const greenStatuses = [
   'fixed',
@@ -14,7 +12,9 @@ const greenStatuses = [
 const orangeStatuses = ['partially succeeded', 'unstable', 'timeout']
 
 const redStatuses = [
+  'broken',
   'error',
+  'errored',
   'failed',
   'failing',
   'failure',
@@ -22,9 +22,11 @@ const redStatuses = [
 ]
 
 const otherStatuses = [
+  'aborted',
   'building',
   'canceled',
   'cancelled',
+  'created',
   'expired',
   'initiated',
   'no builds',
@@ -43,12 +45,12 @@ const otherStatuses = [
   'waiting',
 ]
 
-const isBuildStatus = Joi.equal(
-  greenStatuses
-    .concat(orangeStatuses)
-    .concat(redStatuses)
-    .concat(otherStatuses)
-)
+const allStatuses = greenStatuses
+  .concat(orangeStatuses)
+  .concat(redStatuses)
+  .concat(otherStatuses)
+
+const isBuildStatus = Joi.equal(...allStatuses)
 
 function renderBuildStatusBadge({ label, status }) {
   let message
@@ -72,4 +74,4 @@ function renderBuildStatusBadge({ label, status }) {
   }
 }
 
-module.exports = { isBuildStatus, renderBuildStatusBadge }
+export { isBuildStatus, renderBuildStatusBadge }

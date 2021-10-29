@@ -1,10 +1,7 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const { metric } = require('../text-formatters')
-const { downloadCount: downloadCountColor } = require('../color-formatters')
-const { nonNegativeInteger } = require('../validators')
-const EclipseMarketplaceBase = require('./eclipse-marketplace-base')
+import Joi from 'joi'
+import { renderDownloadsBadge } from '../downloads.js'
+import { nonNegativeInteger } from '../validators.js'
+import EclipseMarketplaceBase from './eclipse-marketplace-base.js'
 
 const monthlyResponseSchema = Joi.object({
   marketplace: Joi.object({
@@ -22,11 +19,16 @@ const totalResponseSchema = Joi.object({
   }),
 }).required()
 
-function DownloadsForInterval(interval) {
-  const { base, schema, messageSuffix = '', name } = {
+function DownloadsForInterval(downloadsInterval) {
+  const {
+    base,
+    schema,
+    interval = '',
+    name,
+  } = {
     month: {
       base: 'eclipse-marketplace/dm',
-      messageSuffix: '/month',
+      interval: 'month',
       schema: monthlyResponseSchema,
       name: 'EclipseMarketplaceDownloadsMonth',
     },
@@ -35,42 +37,28 @@ function DownloadsForInterval(interval) {
       schema: totalResponseSchema,
       name: 'EclipseMarketplaceDownloadsTotal',
     },
-  }[interval]
+  }[downloadsInterval]
 
   return class EclipseMarketplaceDownloads extends EclipseMarketplaceBase {
-    static get name() {
-      return name
-    }
-
-    static get category() {
-      return 'downloads'
-    }
-
-    static get route() {
-      return this.buildRoute(base)
-    }
-
-    static get examples() {
-      return [
-        {
-          title: 'Eclipse Marketplace',
-          namedParams: { name: 'notepad4e' },
-          staticPreview: this.render({ downloads: 30000 }),
-        },
-      ]
-    }
+    static name = name
+    static category = 'downloads'
+    static route = this.buildRoute(base)
+    static examples = [
+      {
+        title: 'Eclipse Marketplace',
+        namedParams: { name: 'notepad4e' },
+        staticPreview: this.render({ downloads: 30000 }),
+      },
+    ]
 
     static render({ downloads }) {
-      return {
-        message: `${metric(downloads)}${messageSuffix}`,
-        color: downloadCountColor(downloads),
-      }
+      return renderDownloadsBadge({ downloads, interval })
     }
 
     async handle({ name }) {
       const { marketplace } = await this.fetch({ name, schema })
       const downloads =
-        interval === 'total'
+        downloadsInterval === 'total'
           ? marketplace.node.installstotal
           : marketplace.node.installsrecent
       return this.constructor.render({ downloads })
@@ -78,4 +66,4 @@ function DownloadsForInterval(interval) {
   }
 }
 
-module.exports = ['month', 'total'].map(DownloadsForInterval)
+export default ['month', 'total'].map(DownloadsForInterval)

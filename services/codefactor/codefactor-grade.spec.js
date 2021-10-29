@@ -1,9 +1,7 @@
-'use strict'
+import { test, given } from 'sazerac'
+import CodeFactorGrade from './codefactor-grade.service.js'
 
-const { test, given } = require('sazerac')
-const CodeFactorGrade = require('./codefactor-grade.service')
-
-describe('CodeFactorGrade', function() {
+describe('CodeFactorGrade', function () {
   test(CodeFactorGrade.render, () => {
     given({ grade: 'A' }).expect({
       message: 'A',

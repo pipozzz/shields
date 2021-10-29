@@ -1,4 +1,4 @@
-import pathToRegexp from 'path-to-regexp'
+import { parse } from 'path-to-regexp'
 
 // Given a patternToRegex `pattern` with multiple-choice options like
 // `foo|bar|baz`, return an array with the options. If it can't be described
@@ -15,25 +15,17 @@ export function patternToOptions(pattern: string): string[] | undefined {
 
 // Removes regexp for named parameters.
 export function removeRegexpFromPattern(pattern: string): string {
-  const tokens = pathToRegexp.parse(pattern)
+  const tokens = parse(pattern)
   const simplePattern = tokens
     .map(token => {
       if (typeof token === 'string') {
         return token
       } else {
-        const { delimiter, optional, repeat, name, pattern } = token
+        const { prefix, modifier, name, pattern } = token
         if (typeof name === 'number') {
-          return `${delimiter}(${pattern})`
+          return `${prefix}(${pattern})`
         } else {
-          let modifier = ''
-          if (optional && !repeat) {
-            modifier = '?'
-          } else if (!optional && repeat) {
-            modifier = '+'
-          } else if (optional && repeat) {
-            modifier = '*'
-          }
-          return `${delimiter}:${name}${modifier}`
+          return `${prefix}:${name}${modifier}`
         }
       }
     })
