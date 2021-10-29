@@ -1,11 +1,10 @@
-'use strict'
-
-const t = (module.exports = require('../tester').createServiceTester())
-const { withRegex } = require('../test-validators')
-const { sampleProjectUuid, checkShouldSkip } = require('./symfony-test-helpers')
+import { createServiceTester } from '../tester.js'
+import { withRegex } from '../test-validators.js'
+import { sampleProjectUuid, noSymfonyToken } from './symfony-test-helpers.js'
+export const t = await createServiceTester()
 
 t.create('valid project stars')
-  .skipWhen(checkShouldSkip)
+  .skipWhen(noSymfonyToken)
   .get(`/${sampleProjectUuid}.json`)
   .timeout(15000)
   .expectBadge({
@@ -16,7 +15,7 @@ t.create('valid project stars')
   })
 
 t.create('stars: nonexistent project')
-  .skipWhen(checkShouldSkip)
+  .skipWhen(noSymfonyToken)
   .get('/abc.json')
   .expectBadge({
     label: 'symfony insight',

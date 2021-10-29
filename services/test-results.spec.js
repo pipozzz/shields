@@ -1,12 +1,10 @@
-'use strict'
-
-const { test, given } = require('sazerac')
-const {
+import { test, given } from 'sazerac'
+import {
   renderTestResultMessage,
   renderTestResultBadge,
-} = require('./test-results')
+} from './test-results.js'
 
-describe('Test result helpers', function() {
+describe('Test result helpers', function () {
   function renderBothStyles(props) {
     const { message: standardMessage, color } = renderTestResultBadge(props)
     const compactMessage = renderTestResultMessage({

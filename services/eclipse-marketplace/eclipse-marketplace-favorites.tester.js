@@ -1,16 +1,11 @@
-'use strict'
+import Joi from 'joi'
+import { createServiceTester } from '../tester.js'
+export const t = await createServiceTester()
 
-const Joi = require('@hapi/joi')
-const t = (module.exports = require('../tester').createServiceTester())
-
-t.create('favorites count')
-  .get('/notepad4e.json')
-  .expectBadge({
-    label: 'favorites',
-    message: Joi.number()
-      .integer()
-      .positive(),
-  })
+t.create('favorites count').get('/notepad4e.json').expectBadge({
+  label: 'favorites',
+  message: Joi.number().integer().positive(),
+})
 
 t.create('favorites for unknown solution')
   .get('/this-does-not-exist.json')

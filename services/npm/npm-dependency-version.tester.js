@@ -1,7 +1,6 @@
-'use strict'
-
-const { semverRange } = require('../validators')
-const t = (module.exports = require('../tester').createServiceTester())
+import { semverRange } from '../validators.js'
+import { createServiceTester } from '../tester.js'
+export const t = await createServiceTester()
 
 t.create('gets the peer dependency version')
   .get('/react-boxplot/peer/react.json')
@@ -25,9 +24,9 @@ t.create('gets the dev dependency version (scoped)')
   })
 
 t.create('gets the dev dependency version (scoped dependency)')
-  .get('/mocha/dev/@mocha/contributors.json')
+  .get('/mocha/dev/@mocha/docdash.json')
   .expectBadge({
-    label: '@mocha/contributors',
+    label: '@mocha/docdash',
     message: semverRange,
   })
 

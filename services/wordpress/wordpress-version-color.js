@@ -1,8 +1,6 @@
-'use strict'
-
-const { promisify } = require('util')
-const semver = require('semver')
-const { regularUpdate } = require('../../core/legacy/regular-update')
+import { promisify } from 'util'
+import semver from 'semver'
+import { regularUpdate } from '../../core/legacy/regular-update.js'
 
 // TODO: Incorporate this schema.
 // const schema = Joi.object()
@@ -30,11 +28,17 @@ function getOfferedVersions() {
   })
 }
 
-function toSemver(version) {
+function toSemver(v) {
+  const parts = v.split('-')
+  if (parts.length > 2) {
+    return v
+  }
+  const version = parts[0]
+  const suffix = parts[1] ? parts[1] : ''
   if (version.split('.').length === 2) {
-    return `${version}.0`
+    return suffix !== '' ? `${version}.0-${suffix}` : `${version}.0`
   } else {
-    return version
+    return v
   }
 }
 
@@ -43,6 +47,8 @@ async function versionColorForWordpressVersion(version) {
 
   const latestVersion = toSemver(offeredVersions[0])
   version = toSemver(version)
+  if (!semver.valid(latestVersion)) return 'lightgrey'
+  if (!semver.valid(version)) return 'lightgrey'
 
   if (version === latestVersion || semver.gtr(version, latestVersion)) {
     return 'brightgreen'
@@ -53,7 +59,4 @@ async function versionColorForWordpressVersion(version) {
   }
 }
 
-module.exports = {
-  getOfferedVersions,
-  versionColorForWordpressVersion,
-}
+export { toSemver, getOfferedVersions, versionColorForWordpressVersion }

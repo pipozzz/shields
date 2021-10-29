@@ -1,41 +1,43 @@
-'use strict'
+import { colorScale } from '../color-formatters.js'
+import { InvalidResponse } from '../index.js'
+import { LiberapayBase } from './liberapay-base.js'
 
-const { colorScale } = require('../color-formatters')
-const { LiberapayBase } = require('./liberapay-base')
-const { InvalidResponse } = require('..')
+export default class LiberapayGoal extends LiberapayBase {
+  static route = this.buildRoute('goal')
 
-module.exports = class LiberapayGoal extends LiberapayBase {
-  static get route() {
-    return this.buildRoute('goal')
-  }
+  static examples = [
+    {
+      title: 'Liberapay goal progress',
+      namedParams: { entity: 'Changaco' },
+      staticPreview: this.render({ percentAchieved: 33 }),
+    },
+  ]
 
-  static get examples() {
-    return [
-      {
-        title: 'Liberapay goal progress',
-        namedParams: { entity: 'Changaco' },
-        staticPreview: this.render({ percentAcheived: 33 }),
-      },
-    ]
-  }
-
-  static render({ percentAcheived }) {
+  static render({ percentAchieved }) {
     return {
       label: 'goal progress',
-      message: `${percentAcheived}%`,
-      color: colorScale([0, 10, 100])(percentAcheived),
+      message: `${percentAchieved}%`,
+      color: colorScale([0, 10, 100])(percentAchieved),
     }
+  }
+
+  transform({ goal, receiving }) {
+    if (!goal) {
+      throw new InvalidResponse({ prettyMessage: 'no public goals' })
+    }
+
+    if (!receiving) {
+      return { percentAchieved: 0 }
+    }
+
+    const percentAchieved = Math.round((receiving.amount / goal.amount) * 100)
+
+    return { percentAchieved }
   }
 
   async handle({ entity }) {
-    const data = await this.fetch({ entity })
-    if (data.goal) {
-      const percentAcheived = Math.round(
-        (data.receiving.amount / data.goal.amount) * 100
-      )
-      return this.constructor.render({ percentAcheived })
-    } else {
-      throw new InvalidResponse({ prettyMessage: 'no public goals' })
-    }
+    const { goal, receiving } = await this.fetch({ entity })
+    const { percentAchieved } = this.transform({ goal, receiving })
+    return this.constructor.render({ percentAchieved })
   }
 }

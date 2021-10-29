@@ -1,39 +1,17 @@
-'use strict'
+import { MetricNames } from '../../core/base-service/metric-helper.js'
+import { BaseYamlService } from '../index.js'
+import { createRoute } from './dynamic-helpers.js'
+import jsonPath from './json-path.js'
 
-const Joi = require('@hapi/joi')
-const jp = require('jsonpath')
-const { renderDynamicBadge, errorMessages } = require('../dynamic-common')
-const { createRoute } = require('./dynamic-helpers')
-const { BaseYamlService, InvalidResponse } = require('..')
+export default class DynamicYaml extends jsonPath(BaseYamlService) {
+  static enabledMetrics = [MetricNames.SERVICE_RESPONSE_SIZE]
+  static route = createRoute('yaml')
 
-module.exports = class DynamicYaml extends BaseYamlService {
-  static get category() {
-    return 'dynamic'
-  }
-
-  static get route() {
-    return createRoute('yaml')
-  }
-
-  static get defaultBadgeData() {
-    return {
-      label: 'custom badge',
-    }
-  }
-
-  async handle(namedParams, { url, query: pathExpression, prefix, suffix }) {
-    const data = await this._requestYaml({
-      schema: Joi.any(),
+  async fetch({ schema, url, errorMessages }) {
+    return this._requestYaml({
+      schema,
       url,
       errorMessages,
     })
-
-    const values = jp.query(data, pathExpression)
-
-    if (!values.length) {
-      throw new InvalidResponse({ prettyMessage: 'no result' })
-    }
-
-    return renderDynamicBadge({ value: values, prefix, suffix })
   }
 }

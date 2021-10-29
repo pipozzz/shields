@@ -1,9 +1,7 @@
-'use strict'
+import { test, given } from 'sazerac'
+import { getDependencyVersion } from './package-json-helpers.js'
 
-const { test, given } = require('sazerac')
-const { getDependencyVersion } = require('./package-json-helpers')
-
-describe('Contributor count helpers', function() {
+describe('Contributor count helpers', function () {
   test(getDependencyVersion, () => {
     given({
       wantedDependency: 'left-pad',

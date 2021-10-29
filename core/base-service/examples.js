@@ -1,9 +1,8 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const pathToRegexp = require('path-to-regexp')
-const coalesceBadge = require('./coalesce-badge')
-const { makeFullUrl } = require('./route')
+import Joi from 'joi'
+import { pathToRegexp, compile } from 'path-to-regexp'
+import categories from '../../services/categories.js'
+import coalesceBadge from './coalesce-badge.js'
+import { makeFullUrl } from './route.js'
 
 const optionalObjectOfKeyValues = Joi.object().pattern(
   /./,
@@ -20,19 +19,12 @@ const schema = Joi.object({
   staticPreview: Joi.object({
     label: Joi.string(),
     message: Joi.alternatives()
-      .try(
-        Joi.string()
-          .allow('')
-          .required(),
-        Joi.number()
-      )
+      .try(Joi.string().allow('').required(), Joi.number())
       .required(),
     color: Joi.string(),
     style: Joi.string(),
   }).required(),
-  keywords: Joi.array()
-    .items(Joi.string())
-    .default([]),
+  keywords: Joi.array().items(Joi.string()).default([]),
   documentation: Joi.string(), // Valid HTML.
 }).required()
 
@@ -58,7 +50,9 @@ function validateExample(example, index, ServiceClass) {
 
   // Make sure we can build the full URL using these patterns.
   try {
-    pathToRegexp.compile(pattern || ServiceClass.route.pattern)(namedParams)
+    compile(pattern || ServiceClass.route.pattern, {
+      encode: encodeURIComponent,
+    })(namedParams)
   } catch (e) {
     throw Error(
       `In example for ${
@@ -68,7 +62,10 @@ function validateExample(example, index, ServiceClass) {
   }
   // Make sure there are no extra keys.
   let keys = []
-  pathToRegexp(pattern || ServiceClass.route.pattern, keys)
+  pathToRegexp(pattern || ServiceClass.route.pattern, keys, {
+    strict: true,
+    sensitive: true,
+  })
   keys = keys.map(({ name }) => name)
   const extraKeys = Object.keys(namedParams).filter(k => !keys.includes(k))
   if (extraKeys.length) {
@@ -125,12 +122,7 @@ function transformExample(inExample, index, ServiceClass) {
     documentation,
   } = validateExample(inExample, index, ServiceClass)
 
-  const {
-    text: [label, message],
-    color,
-    template: style,
-    namedLogo,
-  } = coalesceBadge(
+  const { label, message, color, style, namedLogo } = coalesceBadge(
     {},
     staticPreview,
     ServiceClass.defaultBadgeData,
@@ -154,12 +146,11 @@ function transformExample(inExample, index, ServiceClass) {
       style: style === 'flat' ? undefined : style,
       namedLogo,
     },
-    keywords,
+    keywords: keywords.concat(
+      categories.find(c => c.id === ServiceClass.category).keywords
+    ),
     documentation: documentation ? { __html: documentation } : undefined,
   }
 }
 
-module.exports = {
-  validateExample,
-  transformExample,
-}
+export { validateExample, transformExample }

@@ -1,8 +1,12 @@
-'use strict'
+import Joi from 'joi'
+import { renderBuildStatusBadge } from '../build-status.js'
+import { BaseSvgScrapingService, NotFound } from '../index.js'
+import { keywords, fetch } from './azure-devops-helpers.js'
 
-const { renderBuildStatusBadge } = require('../build-status')
-const { keywords, fetch } = require('./azure-devops-helpers')
-const { BaseSvgScrapingService, NotFound } = require('..')
+const queryParamSchema = Joi.object({
+  stage: Joi.string(),
+  job: Joi.string(),
+})
 
 const documentation = `
 <p>
@@ -27,53 +31,84 @@ const documentation = `
   alt="PROJECT_ID is in the id property of the API response." />
 `
 
-module.exports = class AzureDevOpsBuild extends BaseSvgScrapingService {
-  static get category() {
-    return 'build'
+export default class AzureDevOpsBuild extends BaseSvgScrapingService {
+  static category = 'build'
+
+  static route = {
+    base: 'azure-devops/build',
+    pattern: ':organization/:projectId/:definitionId/:branch*',
+    queryParamSchema,
   }
 
-  static get route() {
-    return {
-      base: 'azure-devops/build',
-      pattern: ':organization/:projectId/:definitionId/:branch*',
-    }
-  }
-
-  static get examples() {
-    return [
-      {
-        title: 'Azure DevOps builds',
-        pattern: ':organization/:projectId/:definitionId',
-        namedParams: {
-          organization: 'totodem',
-          projectId: '8cf3ec0e-d0c2-4fcd-8206-ad204f254a96',
-          definitionId: '2',
-        },
-        staticPreview: renderBuildStatusBadge({ status: 'succeeded' }),
-        keywords,
-        documentation,
+  static examples = [
+    {
+      title: 'Azure DevOps builds',
+      pattern: ':organization/:projectId/:definitionId',
+      namedParams: {
+        organization: 'totodem',
+        projectId: '8cf3ec0e-d0c2-4fcd-8206-ad204f254a96',
+        definitionId: '2',
       },
-      {
-        title: 'Azure DevOps builds (branch)',
-        pattern: ':organization/:projectId/:definitionId/:branch',
-        namedParams: {
-          organization: 'totodem',
-          projectId: '8cf3ec0e-d0c2-4fcd-8206-ad204f254a96',
-          definitionId: '2',
-          branch: 'master',
-        },
-        staticPreview: renderBuildStatusBadge({ status: 'succeeded' }),
-        keywords,
-        documentation,
+      staticPreview: renderBuildStatusBadge({ status: 'succeeded' }),
+      keywords,
+      documentation,
+    },
+    {
+      title: 'Azure DevOps builds (branch)',
+      pattern: ':organization/:projectId/:definitionId/:branch',
+      namedParams: {
+        organization: 'totodem',
+        projectId: '8cf3ec0e-d0c2-4fcd-8206-ad204f254a96',
+        definitionId: '2',
+        branch: 'master',
       },
-    ]
-  }
+      staticPreview: renderBuildStatusBadge({ status: 'succeeded' }),
+      keywords,
+      documentation,
+    },
+    {
+      title: 'Azure DevOps builds (stage)',
+      namedParams: {
+        organization: 'totodem',
+        projectId: '8cf3ec0e-d0c2-4fcd-8206-ad204f254a96',
+        definitionId: '5',
+      },
+      queryParams: {
+        stage: 'Successful Stage',
+      },
+      staticPreview: renderBuildStatusBadge({ status: 'succeeded' }),
+      keywords,
+      documentation,
+    },
+    {
+      title: 'Azure DevOps builds (job)',
+      namedParams: {
+        organization: 'totodem',
+        projectId: '8cf3ec0e-d0c2-4fcd-8206-ad204f254a96',
+        definitionId: '5',
+      },
+      queryParams: {
+        stage: 'Successful Stage',
+        job: 'Successful Job',
+      },
+      staticPreview: renderBuildStatusBadge({ status: 'succeeded' }),
+      keywords,
+      documentation,
+    },
+  ]
 
-  async handle({ organization, projectId, definitionId, branch }) {
+  async handle(
+    { organization, projectId, definitionId, branch },
+    { stage, job }
+  ) {
     // Microsoft documentation: https://docs.microsoft.com/en-us/rest/api/vsts/build/status/get
     const { status } = await fetch(this, {
       url: `https://dev.azure.com/${organization}/${projectId}/_apis/build/status/${definitionId}`,
-      qs: { branchName: branch },
+      qs: {
+        branchName: branch,
+        stageName: stage,
+        jobName: job,
+      },
       errorMessages: {
         404: 'user or project not found',
       },

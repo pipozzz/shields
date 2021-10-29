@@ -1,8 +1,11 @@
-'use strict'
+import Joi from 'joi'
+import { optionalUrl } from '../validators.js'
+import { BaseJsonService } from '../index.js'
+import { authConfig } from './jira-common.js'
 
-const Joi = require('@hapi/joi')
-const { authConfig } = require('./jira-common')
-const { BaseJsonService } = require('..')
+const queryParamSchema = Joi.object({
+  baseUrl: optionalUrl.required(),
+}).required()
 
 const schema = Joi.object({
   total: Joi.number(),
@@ -27,47 +30,35 @@ const documentation = `
 </p>
 `
 
-module.exports = class JiraSprint extends BaseJsonService {
-  static get category() {
-    return 'issue-tracking'
+export default class JiraSprint extends BaseJsonService {
+  static category = 'issue-tracking'
+
+  static route = {
+    base: 'jira/sprint',
+    pattern: ':sprintId',
+    queryParamSchema,
   }
 
-  static get route() {
-    return {
-      base: 'jira/sprint',
-      // Do not base new services on this route pattern.
-      // See https://github.com/badges/shields/issues/3714
-      pattern: ':protocol(http|https)/:hostAndPath(.+)/:sprintId',
-    }
-  }
+  static auth = authConfig
 
-  static get auth() {
-    return authConfig
-  }
-
-  static get examples() {
-    return [
-      {
-        title: 'JIRA sprint completion',
-        pattern: ':protocol/:hostAndPath/:sprintId',
-        namedParams: {
-          protocol: 'https',
-          hostAndPath: 'jira.spring.io',
-          sprintId: '94',
-        },
-        staticPreview: this.render({
-          numCompletedIssues: 27,
-          numTotalIssues: 28,
-        }),
-        documentation,
-        keywords: ['issues'],
+  static examples = [
+    {
+      title: 'JIRA sprint completion',
+      namedParams: {
+        sprintId: '94',
       },
-    ]
-  }
+      queryParams: {
+        baseUrl: 'https://jira.spring.io',
+      },
+      staticPreview: this.render({
+        numCompletedIssues: 27,
+        numTotalIssues: 28,
+      }),
+      documentation,
+    },
+  ]
 
-  static get defaultBadgeData() {
-    return { label: 'jira' }
-  }
+  static defaultBadgeData = { label: 'jira' }
 
   static render({ numCompletedIssues, numTotalIssues }) {
     const percentComplete = numTotalIssues
@@ -86,32 +77,34 @@ module.exports = class JiraSprint extends BaseJsonService {
     }
   }
 
-  async handle({ protocol, hostAndPath, sprintId }) {
+  async handle({ sprintId }, { baseUrl }) {
     // Atlassian Documentation: https://developer.atlassian.com/cloud/jira/platform/rest/v2/#api-group-Search
     // There are other sprint-specific APIs but those require authentication. The search API
     // allows us to get the needed data without being forced to authenticate.
-    const json = await this._requestJson({
-      url: `${protocol}://${hostAndPath}/rest/api/2/search`,
-      schema,
-      options: {
-        qs: {
-          jql: `sprint=${sprintId} AND type IN (Bug,Improvement,Story,"Technical task")`,
-          fields: 'resolution',
-          maxResults: 500,
+    const json = await this._requestJson(
+      this.authHelper.withBasicAuth({
+        url: `${baseUrl}/rest/api/2/search`,
+        schema,
+        options: {
+          qs: {
+            jql: `sprint=${sprintId} AND type IN (Bug,Improvement,Story,"Technical task")`,
+            fields: 'resolution',
+            maxResults: 500,
+          },
         },
-        auth: this.authHelper.basicAuth,
-      },
-      errorMessages: {
-        400: 'sprint not found',
-        404: 'sprint not found',
-      },
-    })
+        errorMessages: {
+          400: 'sprint not found',
+          404: 'sprint not found',
+        },
+      })
+    )
 
     const numTotalIssues = json.total
     const numCompletedIssues = json.issues.filter(issue => {
       if (issue.fields.resolution != null) {
         return issue.fields.resolution.name !== 'Unresolved'
       }
+      return false
     }).length
 
     return this.constructor.render({ numTotalIssues, numCompletedIssues })

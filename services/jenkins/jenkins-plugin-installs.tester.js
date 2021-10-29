@@ -1,16 +1,13 @@
-'use strict'
-
-const { isMetric } = require('../test-validators')
-const t = (module.exports = require('../tester').createServiceTester())
+import { isMetric } from '../test-validators.js'
+import { createServiceTester } from '../tester.js'
+export const t = await createServiceTester()
 
 // total installs
 
-t.create('total installs | valid')
-  .get('/view-job-filters.json')
-  .expectBadge({
-    label: 'installs',
-    message: isMetric,
-  })
+t.create('total installs | valid').get('/view-job-filters.json').expectBadge({
+  label: 'installs',
+  message: isMetric,
+})
 
 t.create('total installs | not found')
   .get('/not-a-plugin.json')
@@ -26,9 +23,9 @@ t.create('version installs | valid: numeric version')
   })
 
 t.create('version installs | valid: alphanumeric version')
-  .get('/view-job-filters/1.27-DRE1.00.json')
+  .get('/build-failure-analyzer/1.17.2-DRE3.14.json')
   .expectBadge({
-    label: 'installs@1.27-DRE1.00',
+    label: 'installs@1.17.2-DRE3.14',
     message: isMetric,
   })
 

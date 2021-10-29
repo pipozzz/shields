@@ -1,21 +1,26 @@
-'use strict'
+import Joi from 'joi'
+import { isBuildStatus } from '../build-status.js'
+import { createServiceTester } from '../tester.js'
+export const t = await createServiceTester()
 
-const Joi = require('@hapi/joi')
-const { isBuildStatus } = require('../build-status')
-const t = (module.exports = require('../tester').createServiceTester())
+const isDroneBuildStatus = Joi.alternatives().try(
+  isBuildStatus,
+  Joi.equal('none'),
+  Joi.equal('killed')
+)
 
 t.create('cloud-hosted build status on default branch')
   .get('/drone/drone.json')
   .expectBadge({
     label: 'build',
-    message: Joi.alternatives().try(isBuildStatus, Joi.equal('none')),
+    message: isDroneBuildStatus,
   })
 
 t.create('cloud-hosted build status on named branch')
   .get('/drone/drone/master.json')
   .expectBadge({
     label: 'build',
-    message: Joi.alternatives().try(isBuildStatus, Joi.equal('none')),
+    message: isDroneBuildStatus,
   })
 
 t.create('cloud-hosted build status on unknown repo')

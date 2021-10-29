@@ -1,18 +1,15 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const t = (module.exports = require('../tester').createServiceTester())
+import Joi from 'joi'
+import { createServiceTester } from '../tester.js'
+export const t = await createServiceTester()
 
 const isLuaVersion = Joi.string()
   .regex(/^v\d+\.\d+\.\d+-\d+$/)
   .required()
 
-t.create('version')
-  .get('/mpeterv/luacheck.json')
-  .expectBadge({
-    label: 'luarocks',
-    message: isLuaVersion,
-  })
+t.create('version').get('/mpeterv/luacheck.json').expectBadge({
+  label: 'luarocks',
+  message: isLuaVersion,
+})
 
 t.create('specified version')
   .get('/mpeterv/luacheck/0.9.0-1.json')

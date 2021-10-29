@@ -1,7 +1,6 @@
-'use strict'
-
-const t = (module.exports = require('../tester').createServiceTester())
-const { withRegex } = require('../test-validators')
+import { createServiceTester } from '../tester.js'
+import { withRegex } from '../test-validators.js'
+export const t = await createServiceTester()
 
 const isMarketplaceVersion = withRegex(/^v(\d+\.\d+\.\d+)(\.\d+)?$/)
 
@@ -28,6 +27,8 @@ t.create('version')
                     version: '1.0.0',
                   },
                 ],
+                releaseDate: '2019-04-13T07:50:27.000Z',
+                lastUpdated: '2019-04-13T07:50:27.000Z',
               },
             ],
           },
@@ -56,6 +57,8 @@ t.create('pre-release version')
                     version: '0.3.8',
                   },
                 ],
+                releaseDate: '2019-04-13T07:50:27.000Z',
+                lastUpdated: '2019-04-13T07:50:27.000Z',
               },
             ],
           },

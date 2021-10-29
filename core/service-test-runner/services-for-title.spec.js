@@ -1,9 +1,7 @@
-'use strict'
+import { test, given } from 'sazerac'
+import servicesForTitle from './services-for-title.js'
 
-const { test, given } = require('sazerac')
-const servicesForTitle = require('./services-for-title')
-
-describe('Services from PR title', function() {
+describe('Services from PR title', function () {
   test(servicesForTitle, () => {
     given('[Travis] Fix timeout issues').expect(['travis'])
     given('[Travis Sonar] Support user token authentication').expect([

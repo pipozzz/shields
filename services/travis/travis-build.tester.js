@@ -1,8 +1,7 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const { isBuildStatus } = require('../build-status')
-const t = (module.exports = require('../tester').createServiceTester())
+import Joi from 'joi'
+import { isBuildStatus } from '../build-status.js'
+import { createServiceTester } from '../tester.js'
+export const t = await createServiceTester()
 
 // Travis (.org) CI
 
@@ -27,9 +26,7 @@ t.create('unknown repo')
 t.create('invalid svg response')
   .get('/foo/bar.json')
   .intercept(nock =>
-    nock('https://api.travis-ci.org')
-      .get('/foo/bar.svg')
-      .reply(200)
+    nock('https://api.travis-ci.org').get('/foo/bar.svg').reply(200)
   )
   .expectBadge({ label: 'build', message: 'unparseable svg response' })
 
@@ -56,8 +53,6 @@ t.create('unknown repo')
 t.create('invalid svg response')
   .get('/com/foo/bar.json')
   .intercept(nock =>
-    nock('https://api.travis-ci.com')
-      .get('/foo/bar.svg')
-      .reply(200)
+    nock('https://api.travis-ci.com').get('/foo/bar.svg').reply(200)
   )
   .expectBadge({ label: 'build', message: 'unparseable svg response' })

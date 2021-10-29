@@ -1,11 +1,13 @@
-'use strict'
-
-const {
+import Joi from 'joi'
+import emojic from 'emojic'
+import { optionalUrl } from '../validators.js'
+import {
   queryParamSchema,
   exampleQueryParams,
   renderWebsiteStatus,
-} = require('../website-status')
-const { BaseService } = require('..')
+} from '../website-status.js'
+import { BaseService } from '../index.js'
+import trace from '../../core/base-service/trace.js'
 
 const documentation = `
 <p>
@@ -27,49 +29,53 @@ const documentation = `
 </p>
 `
 
-module.exports = class Website extends BaseService {
-  static get category() {
-    return 'monitoring'
+const urlQueryParamSchema = Joi.object({
+  url: optionalUrl.required(),
+}).required()
+
+export default class Website extends BaseService {
+  static category = 'monitoring'
+
+  static route = {
+    base: '',
+    pattern: 'website',
+    queryParamSchema: queryParamSchema.concat(urlQueryParamSchema),
   }
 
-  static get route() {
-    return {
-      base: 'website',
-      // Do not base new services on this route pattern.
-      // See https://github.com/badges/shields/issues/3714
-      pattern: ':protocol(https|http)/:hostAndPath+',
-      queryParamSchema,
-    }
-  }
-
-  static get examples() {
-    return [
-      {
-        title: 'Website',
-        namedParams: {
-          protocol: 'https',
-          hostAndPath: 'shields.io',
-        },
-        queryParams: exampleQueryParams,
-        staticPreview: renderWebsiteStatus({ isUp: true }),
-        documentation,
+  static examples = [
+    {
+      title: 'Website',
+      namedParams: {},
+      queryParams: {
+        ...exampleQueryParams,
+        ...{ url: 'https://shields.io' },
       },
-    ]
+      staticPreview: renderWebsiteStatus({ isUp: true }),
+      documentation,
+    },
+  ]
+
+  static defaultBadgeData = {
+    label: 'website',
   }
 
-  static get defaultBadgeData() {
-    return {
-      label: 'website',
-    }
+  async _request({ url, options = {} }) {
+    const logTrace = (...args) => trace.logTrace('fetch', ...args)
+    logTrace(emojic.bowAndArrow, 'Request', url, '\n', options)
+    const { res, buffer } = await this._requestFetcher(url, options)
+    await this._meterResponse(res, buffer)
+    logTrace(emojic.dart, 'Response status code', res.statusCode)
+    return { res, buffer }
   }
 
   async handle(
-    { protocol, hostAndPath },
+    _routeParams,
     {
       up_message: upMessage,
       down_message: downMessage,
       up_color: upColor,
       down_color: downColor,
+      url,
     }
   ) {
     let isUp
@@ -77,7 +83,7 @@ module.exports = class Website extends BaseService {
       const {
         res: { statusCode },
       } = await this._request({
-        url: `${protocol}://${hostAndPath}`,
+        url,
         options: {
           method: 'HEAD',
         },

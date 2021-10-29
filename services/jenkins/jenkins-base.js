@@ -1,13 +1,10 @@
-'use strict'
+import { BaseJsonService } from '../index.js'
 
-const { BaseJsonService } = require('..')
-
-module.exports = class JenkinsBase extends BaseJsonService {
-  static get auth() {
-    return {
-      userKey: 'jenkins_user',
-      passKey: 'jenkins_pass',
-    }
+export default class JenkinsBase extends BaseJsonService {
+  static auth = {
+    userKey: 'jenkins_user',
+    passKey: 'jenkins_pass',
+    serviceKey: 'jenkins',
   }
 
   async fetch({
@@ -15,17 +12,14 @@ module.exports = class JenkinsBase extends BaseJsonService {
     schema,
     qs,
     errorMessages = { 404: 'instance or job not found' },
-    disableStrictSSL,
   }) {
-    return this._requestJson({
-      url,
-      options: {
-        qs,
-        strictSSL: disableStrictSSL === undefined,
-        auth: this.authHelper.basicAuth,
-      },
-      schema,
-      errorMessages,
-    })
+    return this._requestJson(
+      this.authHelper.withBasicAuth({
+        url,
+        options: { qs },
+        schema,
+        errorMessages,
+      })
+    )
   }
 }

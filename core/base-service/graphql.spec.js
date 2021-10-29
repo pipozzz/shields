@@ -1,19 +1,17 @@
-'use strict'
+import { expect } from 'chai'
+import gql from 'graphql-tag'
+import { print } from 'graphql/language/printer.js'
+import { mergeQueries } from './graphql.js'
 
-const { expect } = require('chai')
-const gql = require('graphql-tag')
-const { print } = require('graphql/language/printer')
-const { mergeQueries } = require('./graphql')
+import '../register-chai-plugins.spec.js'
 
-require('../register-chai-plugins.spec')
-
-describe('mergeQueries function', function() {
-  it('merges valid gql queries', function() {
+describe('mergeQueries function', function () {
+  it('merges valid gql queries', function () {
     expect(
       print(
         mergeQueries(
           gql`
-            query($param: String!) {
+            query ($param: String!) {
               foo(param: $param) {
                 bar
               }
@@ -29,7 +27,7 @@ describe('mergeQueries function', function() {
       print(
         mergeQueries(
           gql`
-            query($param: String!) {
+            query ($param: String!) {
               foo(param: $param) {
                 bar
               }
@@ -86,7 +84,7 @@ describe('mergeQueries function', function() {
     ).to.equalIgnoreSpaces('{ foo bar }')
   })
 
-  it('throws an error when passed invalid params', function() {
+  it('throws an error when passed invalid params', function () {
     expect(() => mergeQueries('', '')).to.throw(Error)
     expect(() => mergeQueries(undefined, 17, true)).to.throw(Error)
     expect(() => mergeQueries(gql``, gql`foo`)).to.throw(Error)

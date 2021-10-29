@@ -1,24 +1,17 @@
-'use strict'
+import queryString from 'querystring'
+import { ServiceTester } from '../tester.js'
 
-const queryString = require('querystring')
-const { ServiceTester } = require('../tester')
-
-const t = (module.exports = new ServiceTester({
+export const t = new ServiceTester({
   id: 'SonarRedirect',
   title: 'SonarRedirect',
   pathPrefix: '/sonar',
-}))
+})
 
 t.create('sonar version')
   .get(
-    '/4.2/http/sonar.petalslink.com/org.ow2.petals:petals-se-ase/alert_status.svg',
-    {
-      followRedirect: false,
-    }
+    '/4.2/http/sonar.petalslink.com/org.ow2.petals:petals-se-ase/alert_status.svg'
   )
-  .expectStatus(301)
-  .expectHeader(
-    'Location',
+  .expectRedirect(
     `/sonar/alert_status/org.ow2.petals:petals-se-ase.svg?${queryString.stringify(
       {
         server: 'http://sonar.petalslink.com',
@@ -29,14 +22,9 @@ t.create('sonar version')
 
 t.create('sonar host parameter')
   .get(
-    '/http/sonar.petalslink.com/org.ow2.petals:petals-se-ase/alert_status.svg',
-    {
-      followRedirect: false,
-    }
+    '/http/sonar.petalslink.com/org.ow2.petals:petals-se-ase/alert_status.svg'
   )
-  .expectStatus(301)
-  .expectHeader(
-    'Location',
+  .expectRedirect(
     `/sonar/alert_status/org.ow2.petals:petals-se-ase.svg?${queryString.stringify(
       {
         server: 'http://sonar.petalslink.com',
@@ -46,14 +34,9 @@ t.create('sonar host parameter')
 
 t.create('sonar host parameter with version')
   .get(
-    '/http/sonar.petalslink.com/org.ow2.petals:petals-se-ase/alert_status.svg?sonarVersion=4.2',
-    {
-      followRedirect: false,
-    }
+    '/http/sonar.petalslink.com/org.ow2.petals:petals-se-ase/alert_status.svg?sonarVersion=4.2'
   )
-  .expectStatus(301)
-  .expectHeader(
-    'Location',
+  .expectRedirect(
     `/sonar/alert_status/org.ow2.petals:petals-se-ase.svg?${queryString.stringify(
       {
         server: 'http://sonar.petalslink.com',

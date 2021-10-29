@@ -1,19 +1,15 @@
-'use strict'
+import { ServiceTester } from '../tester.js'
 
-const { ServiceTester } = require('../tester')
-
-const t = (module.exports = new ServiceTester({
+export const t = new ServiceTester({
   id: 'osslifecycle',
   title: 'OSS Lifecycle',
-}))
+})
 
-t.create('osslifecycle active status')
-  .get('/zalando/ghe-backup.json')
-  .expectBadge({
-    label: 'oss lifecycle',
-    message: 'active',
-    color: 'brightgreen',
-  })
+t.create('osslifecycle active status').get('/netflix/sureal.json').expectBadge({
+  label: 'oss lifecycle',
+  message: 'active',
+  color: 'brightgreen',
+})
 
 t.create('osslifecycle maintenance status')
   .get('/Teevity/ice.json')
@@ -31,13 +27,11 @@ t.create('osslifecycle archived status')
     color: 'red',
   })
 
-t.create('osslifecycle other status')
-  .get('/Netflix/metacat.json')
-  .expectBadge({
-    label: 'oss lifecycle',
-    message: 'private',
-    color: 'lightgrey',
-  })
+t.create('osslifecycle other status').get('/Netflix/metacat.json').expectBadge({
+  label: 'oss lifecycle',
+  message: 'private',
+  color: 'lightgrey',
+})
 
 t.create('osslifecycle status (branch)')
   .get('/Netflix/osstracker/documentation.json')
@@ -51,7 +45,7 @@ t.create('oss metadata in unexpected format')
   .intercept(
     nock =>
       nock('https://raw.githubusercontent.com')
-        .get('/some-user/some-project/master/OSSMETADATA')
+        .get('/some-user/some-project/HEAD/OSSMETADATA')
         .reply(200, `wrongkey=active`),
     {
       'Content-Type': 'text/plain;charset=UTF-8',
@@ -62,9 +56,7 @@ t.create('oss metadata in unexpected format')
     message: 'metadata in unexpected format',
   })
 
-t.create('oss metadata not found')
-  .get('/PyvesB/empty-repo.json')
-  .expectBadge({
-    label: 'oss lifecycle',
-    message: 'not found',
-  })
+t.create('oss metadata not found').get('/PyvesB/empty-repo.json').expectBadge({
+  label: 'oss lifecycle',
+  message: 'not found',
+})

@@ -1,8 +1,7 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const { isStarRating } = require('../test-validators')
-const t = (module.exports = require('../tester').createServiceTester())
+import Joi from 'joi'
+import { isStarRating } from '../test-validators.js'
+import { createServiceTester } from '../tester.js'
+export const t = await createServiceTester()
 
 t.create('stars of component displayed in star icons')
   .get('/star/vaadinvaadin-grid.json')
@@ -25,9 +24,7 @@ t.create('rating of the component (eg: 4.2/5)')
     message: Joi.string().regex(/^\d\.\d\/5$/),
   })
 
-t.create('not found')
-  .get('/rating/does-not-exist.json')
-  .expectBadge({
-    label: 'rating',
-    message: 'not found',
-  })
+t.create('not found').get('/rating/does-not-exist.json').expectBadge({
+  label: 'rating',
+  message: 'not found',
+})

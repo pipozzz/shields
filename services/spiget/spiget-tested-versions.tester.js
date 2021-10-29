@@ -1,7 +1,6 @@
-'use strict'
-
-const { withRegex } = require('../test-validators')
-const t = (module.exports = require('../tester').createServiceTester())
+import { withRegex } from '../test-validators.js'
+import { createServiceTester } from '../tester.js'
+export const t = await createServiceTester()
 
 const multipleVersions = withRegex(/^([+]?\d*\.\d+)(-)([+]?\d*\.\d+)$/)
 
@@ -12,12 +11,10 @@ t.create('EssentialsX - multiple versions supported - (id 9089)')
     message: multipleVersions,
   })
 
-t.create('Invalid Resource (id 1)')
-  .get('/1.json')
-  .expectBadge({
-    label: 'tested versions',
-    message: 'not found',
-  })
+t.create('Invalid Resource (id 1)').get('/1.json').expectBadge({
+  label: 'tested versions',
+  message: 'not found',
+})
 
 t.create('Nock - single version supported')
   .get('/1.json')
@@ -27,6 +24,7 @@ t.create('Nock - single version supported')
       .reply(200, {
         downloads: 1,
         file: {
+          type: '.jar',
           size: 1,
           sizeUnit: '1',
         },
@@ -50,6 +48,7 @@ t.create('Nock - multiple versions supported')
       .reply(200, {
         downloads: 1,
         file: {
+          type: '.jar',
           size: 1,
           sizeUnit: '1',
         },

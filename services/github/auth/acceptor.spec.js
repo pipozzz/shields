@@ -1,47 +1,33 @@
-'use strict'
-
-const { expect } = require('chai')
-const Camp = require('camp')
-const sinon = require('sinon')
-const portfinder = require('portfinder')
-const queryString = require('query-string')
-const nock = require('nock')
-const got = require('../../../core/got-test-client')
-const serverSecrets = require('../../../lib/server-secrets')
-const GithubConstellation = require('../github-constellation')
-const acceptor = require('./acceptor')
+import { expect } from 'chai'
+import Camp from '@shields_io/camp'
+import FormData from 'form-data'
+import sinon from 'sinon'
+import portfinder from 'portfinder'
+import queryString from 'query-string'
+import nock from 'nock'
+import got from '../../../core/got-test-client.js'
+import GithubConstellation from '../github-constellation.js'
+import { setRoutes } from './acceptor.js'
 
 const fakeClientId = 'githubdabomb'
-const fakeShieldsSecret = 'letmeinplz'
 
-describe('Github token acceptor', function() {
+describe('Github token acceptor', function () {
   const oauthHelper = GithubConstellation._createOauthHelper({
-    gh_client_id: fakeClientId,
-  })
-  before(function() {
-    // Make sure properties exist.
-    // https://github.com/sinonjs/sinon/pull/1557
-    serverSecrets.shields_ips = undefined
-    serverSecrets.shields_secret = undefined
-    sinon.stub(serverSecrets, 'shields_ips').value([])
-    sinon.stub(serverSecrets, 'shields_secret').value(fakeShieldsSecret)
-  })
-  after(function() {
-    sinon.restore()
+    private: { gh_client_id: fakeClientId },
   })
 
   let port, baseUrl
-  beforeEach(async function() {
+  beforeEach(async function () {
     port = await portfinder.getPortPromise()
     baseUrl = `http://127.0.0.1:${port}`
   })
 
   let camp
-  beforeEach(async function() {
+  beforeEach(async function () {
     camp = Camp.start({ port, hostname: '::' })
     await new Promise(resolve => camp.on('listening', () => resolve()))
   })
-  afterEach(async function() {
+  afterEach(async function () {
     if (camp) {
       await new Promise(resolve => camp.close(resolve))
       camp = undefined
@@ -49,16 +35,16 @@ describe('Github token acceptor', function() {
   })
 
   let onTokenAccepted
-  beforeEach(function() {
+  beforeEach(function () {
     onTokenAccepted = sinon.stub()
-    acceptor.setRoutes({
+    setRoutes({
       server: camp,
       authHelper: oauthHelper,
       onTokenAccepted,
     })
   })
 
-  it('should start the OAuth process', async function() {
+  it('should start the OAuth process', async function () {
     const res = await got(`${baseUrl}/github-auth`, { followRedirect: false })
 
     expect(res.statusCode).to.equal(302)
@@ -71,9 +57,9 @@ describe('Github token acceptor', function() {
     expect(res.headers.location).to.equal(expectedLocationHeader)
   })
 
-  describe('Finishing the OAuth process', function() {
-    context('no code is provided', function() {
-      it('should return an error', async function() {
+  describe('Finishing the OAuth process', function () {
+    context('no code is provided', function () {
+      it('should return an error', async function () {
         const res = await got(`${baseUrl}/github-auth/done`)
         expect(res.body).to.equal(
           'GitHub OAuth authentication failed to provide a code.'
@@ -84,9 +70,9 @@ describe('Github token acceptor', function() {
     const fakeCode = '123456789'
     const fakeAccessToken = 'abcdef'
 
-    context('a code is provided', function() {
+    context('a code is provided', function () {
       let scope
-      beforeEach(function() {
+      beforeEach(function () {
         nock.enableNetConnect(/127\.0\.0\.1/)
 
         scope = nock('https://github.com')
@@ -100,44 +86,36 @@ describe('Github token acceptor', function() {
           })
       })
 
-      afterEach(function() {
+      afterEach(function () {
         // Make sure other tests will make live requests even when this test
         // fails.
         nock.enableNetConnect()
       })
 
-      afterEach(function() {
+      afterEach(function () {
         if (scope) {
           scope.done()
           scope = null
         }
       })
 
-      afterEach(function() {
+      afterEach(function () {
         nock.cleanAll()
       })
 
-      it('should finish the OAuth process', async function() {
-        const res = await got(`${baseUrl}/github-auth/done`, {
-          form: true,
-          body: { code: fakeCode },
+      it('should finish the OAuth process', async function () {
+        const form = new FormData()
+        form.append('code', fakeCode)
+
+        const res = await got.post(`${baseUrl}/github-auth/done`, {
+          body: form,
         })
         expect(res.body).to.startWith(
           '<p>Shields.io has received your app-specific GitHub user token.'
         )
+
+        expect(onTokenAccepted).to.have.been.calledWith(fakeAccessToken)
       })
     })
-  })
-
-  it('should add a received token', async function() {
-    const fakeAccessToken = 'its-my-token'
-
-    const { body } = await got(`${baseUrl}/github-auth/add-token`, {
-      form: true,
-      body: { shieldsSecret: fakeShieldsSecret, token: fakeAccessToken },
-    })
-
-    expect(onTokenAccepted).to.have.been.calledWith(fakeAccessToken)
-    expect(body).to.equal('Thanks!')
   })
 })

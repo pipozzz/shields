@@ -1,15 +1,13 @@
-'use strict'
-
-const { ServiceTester } = require('../tester')
-const { isMetricOverTimePeriod } = require('../test-validators')
-const t = (module.exports = new ServiceTester({
+import { ServiceTester } from '../tester.js'
+import { isMetricOverTimePeriod } from '../test-validators.js'
+export const t = new ServiceTester({
   id: 'AmoDownloads',
   title: 'AmoDownloads',
   pathPrefix: '/amo',
-}))
+})
 
 t.create('Weekly Downloads')
-  .get('/dw/dustman.json')
+  .get('/dw/duckduckgo-for-firefox.json')
   .expectBadge({ label: 'downloads', message: isMetricOverTimePeriod })
 
 t.create('Weekly Downloads (not found)')
@@ -17,5 +15,5 @@ t.create('Weekly Downloads (not found)')
   .expectBadge({ label: 'downloads', message: 'not found' })
 
 t.create('/d URL should redirect to /dw')
-  .get('/d/dustman.json')
-  .expectBadge({ label: 'downloads', message: isMetricOverTimePeriod })
+  .get('/d/dustman.svg')
+  .expectRedirect('/amo/dw/dustman.svg')

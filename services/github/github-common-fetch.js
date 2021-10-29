@@ -1,8 +1,6 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const { errorMessagesFor } = require('./github-helpers')
-const { InvalidResponse } = require('..')
+import Joi from 'joi'
+import { InvalidResponse } from '../index.js'
+import { errorMessagesFor } from './github-helpers.js'
 
 const issueSchema = Joi.object({
   head: Joi.object({
@@ -24,75 +22,57 @@ const contentSchema = Joi.object({
   encoding: Joi.equal('base64').required(),
 }).required()
 
-async function fetchJsonFromRepo(
+async function fetchRepoContent(
   serviceInstance,
-  { schema, user, repo, branch = 'master', filename }
+  { user, repo, branch = 'HEAD', filename }
 ) {
   const errorMessages = errorMessagesFor(
     `repo not found, branch not found, or ${filename} missing`
   )
   if (serviceInstance.staticAuthConfigured) {
-    const url = `/repos/${user}/${repo}/contents/${filename}`
-    const options = { qs: { ref: branch } }
     const { content } = await serviceInstance._requestJson({
       schema: contentSchema,
-      url,
-      options,
+      url: `/repos/${user}/${repo}/contents/${filename}`,
+      options: { qs: { ref: branch } },
       errorMessages,
     })
 
-    let decoded
     try {
-      decoded = Buffer.from(content, 'base64').toString('utf-8')
+      return Buffer.from(content, 'base64').toString('utf-8')
     } catch (e) {
       throw new InvalidResponse({ prettyMessage: 'undecodable content' })
     }
-    const json = serviceInstance._parseJson(decoded)
-    return serviceInstance.constructor._validate(json, schema)
   } else {
-    const url = `https://raw.githubusercontent.com/${user}/${repo}/${branch}/${filename}`
-    return serviceInstance._requestJson({
-      schema,
-      url,
+    const { buffer } = await serviceInstance._request({
+      url: `https://raw.githubusercontent.com/${user}/${repo}/${branch}/${filename}`,
       errorMessages,
     })
+    return buffer
   }
 }
 
-const releaseInfoSchema = Joi.object({
-  tag_name: Joi.string().required(),
-  prerelease: Joi.boolean().required(),
-}).required()
-const releaseInfoArraySchema = Joi.array()
-  .items(releaseInfoSchema)
-  .required()
-
-async function fetchLatestRelease(
+async function fetchJsonFromRepo(
   serviceInstance,
-  { user, repo, includePre = false }
+  { schema, user, repo, branch = 'HEAD', filename }
 ) {
-  const commonAttrs = {
-    errorMessages: errorMessagesFor('no releases or repo not found'),
-  }
-  if (includePre) {
-    const [releaseInfo] = await serviceInstance._requestJson({
-      schema: releaseInfoArraySchema,
-      url: `/repos/${user}/${repo}/releases`,
-      ...commonAttrs,
+  if (serviceInstance.staticAuthConfigured) {
+    const buffer = await fetchRepoContent(serviceInstance, {
+      user,
+      repo,
+      branch,
+      filename,
     })
-    return releaseInfo
+    const json = serviceInstance._parseJson(buffer)
+    return serviceInstance.constructor._validate(json, schema)
   } else {
-    const releaseInfo = await serviceInstance._requestJson({
-      schema: releaseInfoSchema,
-      url: `/repos/${user}/${repo}/releases/latest`,
-      ...commonAttrs,
+    return serviceInstance._requestJson({
+      schema,
+      url: `https://raw.githubusercontent.com/${user}/${repo}/${branch}/${filename}`,
+      errorMessages: errorMessagesFor(
+        `repo not found, branch not found, or ${filename} missing`
+      ),
     })
-    return releaseInfo
   }
 }
 
-module.exports = {
-  fetchIssue,
-  fetchJsonFromRepo,
-  fetchLatestRelease,
-}
+export { fetchIssue, fetchRepoContent, fetchJsonFromRepo }

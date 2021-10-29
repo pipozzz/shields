@@ -1,20 +1,13 @@
-'use strict'
+import { ServiceTester } from '../tester.js'
 
-const { withRegex } = require('../test-validators')
-const t = (module.exports = require('../tester').createServiceTester())
+export const t = new ServiceTester({
+  id: 'beerpay',
+  title: 'Beerpay',
+})
 
-const amountOfMoney = withRegex(/^\$[0-9]+(\.[0-9]+)?/)
-
-t.create('funding')
+t.create('no longer available (previously beerpay)')
   .get('/hashdog/scrapfy-chrome-extension.json')
   .expectBadge({
     label: 'beerpay',
-    message: amountOfMoney,
-  })
-
-t.create('funding (unknown project)')
-  .get('/hashdog/not-a-real-project.json')
-  .expectBadge({
-    label: 'beerpay',
-    message: 'project not found',
+    message: 'no longer available',
   })

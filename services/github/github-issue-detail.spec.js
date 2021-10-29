@@ -1,14 +1,12 @@
-'use strict'
+import { expect } from 'chai'
+import { test, given } from 'sazerac'
+import { age } from '../color-formatters.js'
+import { formatDate, metric } from '../text-formatters.js'
+import { InvalidResponse } from '../index.js'
+import GithubIssueDetail from './github-issue-detail.service.js'
+import { stateColor, commentsColor } from './github-helpers.js'
 
-const { expect } = require('chai')
-const { test, given } = require('sazerac')
-const { age } = require('../color-formatters')
-const { formatDate, metric } = require('../text-formatters')
-const GithubIssueDetail = require('./github-issue-detail.service')
-const { stateColor, commentsColor } = require('./github-helpers')
-const { InvalidResponse } = require('..')
-
-describe('GithubIssueDetail', function() {
+describe('GithubIssueDetail', function () {
   test(GithubIssueDetail.render, () => {
     given({
       property: 'state',
@@ -182,8 +180,8 @@ describe('GithubIssueDetail', function() {
     })
   })
 
-  context('transform()', function() {
-    it('throws InvalidResponse error when issue has no labels', function() {
+  context('transform()', function () {
+    it('throws InvalidResponse error when issue has no labels', function () {
       try {
         GithubIssueDetail.prototype.transform({
           property: 'label',

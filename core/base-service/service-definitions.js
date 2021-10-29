@@ -1,14 +1,9 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
+import Joi from 'joi'
 
 // This should be kept in sync with the schema in
-// `frontend/lib/service-definitions/service-definition-prop-types.js`.
+// `frontend/lib/service-definitions/index.ts`.
 
-const arrayOfStrings = Joi.array()
-  .items(Joi.string())
-  .allow([])
-  .required()
+const arrayOfStrings = Joi.array().items(Joi.string()).min(0).required()
 
 const objectOfKeyValues = Joi.object()
   .pattern(/./, Joi.string().allow(null))
@@ -39,9 +34,7 @@ const serviceDefinition = Joi.object({
         }).required(),
         preview: Joi.object({
           label: Joi.string(),
-          message: Joi.string()
-            .allow('')
-            .required(),
+          message: Joi.string().allow('').required(),
           color: Joi.string().required(),
           style: Joi.string(),
           namedLogo: Joi.string(),
@@ -66,19 +59,18 @@ const serviceDefinitionExport = Joi.object({
       Joi.object({
         id: Joi.string().required(),
         name: Joi.string().required(),
+        keywords: arrayOfStrings,
       })
     )
     .required(),
-  services: Joi.array()
-    .items(serviceDefinition)
-    .required(),
+  services: Joi.array().items(serviceDefinition).required(),
 }).required()
 
 function assertValidServiceDefinitionExport(examples, message = undefined) {
   Joi.assert(examples, serviceDefinitionExport, message)
 }
 
-module.exports = {
+export {
   serviceDefinition,
   assertValidServiceDefinition,
   serviceDefinitionExport,

@@ -1,8 +1,6 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const { nonNegativeInteger, semver } = require('../validators')
-const { BaseJsonService } = require('..')
+import Joi from 'joi'
+import { nonNegativeInteger, semver } from '../validators.js'
+import { BaseJsonService } from '../index.js'
 
 const usersSchema = Joi.object({
   module_count: nonNegativeInteger,
@@ -11,23 +9,16 @@ const usersSchema = Joi.object({
 
 const modulesSchema = Joi.object({
   endorsement: Joi.string().allow(null),
-  feedback_score: Joi.number()
-    .integer()
-    .min(0)
-    .allow(null),
+  feedback_score: Joi.number().integer().min(0).allow(null),
   downloads: nonNegativeInteger,
   current_release: Joi.alternatives(
     Joi.object({
-      pdk: Joi.boolean()
-        .valid(true)
-        .required(),
+      pdk: Joi.boolean().valid(true).required(),
       version: semver,
       metadata: Joi.object({ 'pdk-version': semver }).required(),
     }).required(),
     Joi.object({
-      pdk: Joi.boolean()
-        .valid(false)
-        .required(),
+      pdk: Joi.boolean().valid(false).required(),
       version: semver,
     }).required()
   ),
@@ -51,7 +42,4 @@ class BasePuppetForgeModulesService extends BaseJsonService {
   }
 }
 
-module.exports = {
-  BasePuppetForgeModulesService,
-  BasePuppetForgeUsersService,
-}
+export { BasePuppetForgeModulesService, BasePuppetForgeUsersService }

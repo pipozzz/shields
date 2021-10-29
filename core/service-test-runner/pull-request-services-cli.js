@@ -13,11 +13,9 @@
 //
 // TRAVIS=1 TRAVIS_REPO_SLUG=badges/shields TRAVIS_PULL_REQUEST=1108 npm run test:services:pr:prepare
 
-'use strict'
-
-const got = require('got')
-const { inferPullRequest } = require('./infer-pull-request')
-const servicesForTitle = require('./services-for-title')
+import got from 'got'
+import { inferPullRequest } from './infer-pull-request.js'
+import servicesForTitle from './services-for-title.js'
 
 async function getTitle(owner, repo, pullRequest) {
   const {
@@ -25,9 +23,11 @@ async function getTitle(owner, repo, pullRequest) {
   } = await got(
     `https://api.github.com/repos/${owner}/${repo}/pulls/${pullRequest}`,
     {
-      headers: { 'User-Agent': 'badges/shields' },
-      query: { access_token: process.env.GITHUB_TOKEN },
-      json: true,
+      headers: {
+        'User-Agent': 'badges/shields',
+        Authorization: `token ${process.env.GITHUB_TOKEN}`,
+      },
+      responseType: 'json',
     }
   )
   return title

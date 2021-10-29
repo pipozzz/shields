@@ -1,22 +1,21 @@
-'use strict'
-
-const { expect } = require('chai')
-const nock = require('nock')
-const { cleanUpNockAfterEach, defaultContext } = require('../test-helpers')
-const JiraSprint = require('./jira-sprint.service')
-const {
+import { expect } from 'chai'
+import nock from 'nock'
+import { cleanUpNockAfterEach, defaultContext } from '../test-helpers.js'
+import JiraSprint from './jira-sprint.service.js'
+import {
   user,
   pass,
+  host,
   config,
   sprintId,
   sprintQueryString,
-} = require('./jira-test-helpers')
+} from './jira-test-helpers.js'
 
-describe('JiraSprint', function() {
+describe('JiraSprint', function () {
   cleanUpNockAfterEach()
 
-  it('sends the auth information as configured', async function() {
-    const scope = nock('https://myprivatejira.test')
+  it('sends the auth information as configured', async function () {
+    const scope = nock(`https://${host}`)
       .get('/jira/rest/api/2/search')
       .query(sprintQueryString)
       // This ensures that the expected credentials are actually being sent with the HTTP request.
@@ -31,11 +30,14 @@ describe('JiraSprint', function() {
       })
 
     expect(
-      await JiraSprint.invoke(defaultContext, config, {
-        protocol: 'https',
-        hostAndPath: 'myprivatejira.test/jira',
-        sprintId,
-      })
+      await JiraSprint.invoke(
+        defaultContext,
+        config,
+        {
+          sprintId,
+        },
+        { baseUrl: `https://${host}/jira` }
+      )
     ).to.deep.equal({
       label: 'completion',
       message: '50%',

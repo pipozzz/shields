@@ -1,13 +1,11 @@
-'use strict'
-
-const { test, given, forCases } = require('sazerac')
-const {
+import { test, given, forCases } from 'sazerac'
+import {
   parseClassifiers,
   parseDjangoVersionString,
   sortDjangoVersions,
   getLicenses,
   getPackageFormats,
-} = require('./pypi-helpers')
+} from './pypi-helpers.js'
 
 const classifiersFixture = {
   info: {
@@ -36,8 +34,8 @@ const classifiersFixture = {
   },
 }
 
-describe('PyPI helpers', function() {
-  test(parseClassifiers, function() {
+describe('PyPI helpers', function () {
+  test(parseClassifiers, function () {
     given(
       classifiersFixture,
       /^Programming Language :: Python :: ([\d.]+)$/
@@ -62,7 +60,7 @@ describe('PyPI helpers', function() {
     given(classifiersFixture, /^(?!.*)*$/).expect([])
   })
 
-  test(parseDjangoVersionString, function() {
+  test(parseDjangoVersionString, function () {
     given('1').expect({ major: 1, minor: 0 })
     given('1.0').expect({ major: 1, minor: 0 })
     given('7.2').expect({ major: 7, minor: 2 })
@@ -71,7 +69,7 @@ describe('PyPI helpers', function() {
     given('foo').expect({ major: 0, minor: 0 })
   })
 
-  test(sortDjangoVersions, function() {
+  test(sortDjangoVersions, function () {
     // Each of these includes a different variant: 2.0, 2, and 2.0rc1.
     given(['2.0', '1.9', '10', '1.11', '2.1', '2.11']).expect([
       '1.9',
@@ -127,13 +125,35 @@ describe('PyPI helpers', function() {
         license: '',
         classifiers: ['License :: Public Domain'],
       },
-    }).expect(['public domain'])
+    }).expect(['Public Domain'])
     given({
       info: {
         license: '',
         classifiers: ['License :: Netscape Public License (NPL)'],
       },
     }).expect(['NPL'])
+    given({
+      info: {
+        license: '',
+        classifiers: ['License :: OSI Approved :: Apache Software License'],
+      },
+    }).expect(['Apache-2.0'])
+    given({
+      info: {
+        license: '',
+        classifiers: [
+          'License :: CC0 1.0 Universal (CC0 1.0) Public Domain Dedication',
+        ],
+      },
+    }).expect(['CC0-1.0'])
+    given({
+      info: {
+        license: '',
+        classifiers: [
+          'License :: OSI Approved :: GNU Affero General Public License v3',
+        ],
+      },
+    }).expect(['AGPL-3.0'])
   })
 
   test(getPackageFormats, () => {
@@ -154,7 +174,7 @@ describe('PyPI helpers', function() {
     given({
       info: { version: '0.8.2' },
       releases: {
-        '0.8': [{ packagetype: 'sdist' }],
+        0.8: [{ packagetype: 'sdist' }],
         '0.8.1': [
           { packagetype: 'bdist_egg' },
           { packagetype: 'bdist_egg' },

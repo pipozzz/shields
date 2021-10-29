@@ -1,9 +1,7 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const toArray = require('../core/base-service/to-array')
-const validate = require('../core/base-service/validate')
-const { InvalidResponse } = require('.')
+import Joi from 'joi'
+import toArray from '../core/base-service/to-array.js'
+import validate from '../core/base-service/validate.js'
+import { InvalidResponse } from './index.js'
 
 const errorMessages = {
   404: 'resource not found',
@@ -15,9 +13,7 @@ const individualValueSchema = Joi.alternatives()
 
 const compoundValueSchema = Joi.alternatives().try(
   individualValueSchema,
-  Joi.array()
-    .items(individualValueSchema)
-    .required(),
+  Joi.array().items(individualValueSchema).required(),
   Joi.array().length(0)
 )
 
@@ -50,7 +46,7 @@ function renderDynamicBadge({
   }
 }
 
-module.exports = {
+export {
   errorMessages,
   individualValueSchema,
   transformAndValidate,

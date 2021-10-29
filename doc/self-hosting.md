@@ -1,31 +1,34 @@
 # Hosting your own Shields server
 
-## Installation
+This document describes how to host your own shields server either from source or using a docker image. See the docs on [releases](https://github.com/badges/shields/blob/master/doc/releases.md#shields-server) for info on how we version the server and how to choose a release.
 
-You will need Node 8 or later, which you can install using a
+## Installing from Source
+
+You will need Node 14 or later, which you can install using a
 [package manager][].
 
 On Ubuntu / Debian:
 
 ```sh
-curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -; sudo apt-get install -y nodejs
+curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -; sudo apt-get install -y nodejs
 ```
 
 ```sh
 git clone https://github.com/badges/shields.git
 cd shields
+git checkout $(git tag | grep server | tail -n 1)  # checkout the latest tag
 npm ci  # You may need sudo for this.
 ```
 
 [package manager]: https://nodejs.org/en/download/package-manager/
 
-## Build the frontend
+### Build the frontend
 
 ```sh
 npm run build
 ```
 
-## Start the server
+### Start the server
 
 ```sh
 sudo node server
@@ -44,7 +47,7 @@ The root gets redirected to https://shields.io.
 
 For testing purposes, you can go to `http://localhost/`.
 
-## Heroku
+### Deploying to Heroku
 
 Once you have installed the [Heroku CLI][]
 
@@ -57,9 +60,32 @@ heroku open
 
 [heroku cli]: https://devcenter.heroku.com/articles/heroku-cli
 
+### Deploying to Zeit Vercel
+
+To deploy using Zeit Vercel:
+
+```console
+npm run build  # Not sure why, but this needs to be run before deploying.
+vercel
+```
+
 ## Docker
 
-You can build and run the server locally using Docker. First build an image:
+### DockerHub
+
+We publish images to DockerHub at https://registry.hub.docker.com/r/shieldsio/shields
+
+The `next` tag is the latest build from `master`, or tagged releases are available
+https://registry.hub.docker.com/r/shieldsio/shields/tags
+
+```console
+$ docker pull shieldsio/shields:next
+$ docker run shieldsio/shields:next
+```
+
+### Building Docker Image Locally
+
+Alternatively, you can build and run the server locally using Docker. First build an image:
 
 ```console
 $ docker build -t shields .
@@ -68,20 +94,18 @@ Sending build context to Docker daemon 3.923 MB
 Successfully built 4471b442c220
 ```
 
-Optionally, create a file called `shields.env` that contains the needed
-configuration. See [server-secrets.md](server-secrets.md) and [../config/custom-environment-variables.yml](config/custom-environment-variables.yml) for examples.
+Optionally, alter the default values for configuration by setting them via [environment variables](https://docs.docker.com/engine/reference/commandline/run/#set-environment-variables--e---env---env-file).
+See [server-secrets.md](server-secrets.md) and [config/custom-environment-variables.yml](/config/custom-environment-variables.yml) for possible values.
+In [config/custom-environment-variables.yml](/config/custom-environment-variables.yml), environment variable names are specified as the quoted, uppercase key values (e.g. `GH_TOKEN`).
 
-Then run the container:
+Then run the container, and be sure to specify the same mapped port as the one Shields is listening on :
 
 ```console
-$ docker run --rm -p 8080:80 --name shields shields
-# or if you have shields.env file, run the following instead
-$ docker run --rm -p 8080:80 --env-file shields.env --name shields shields
+$ docker run --rm -p 8080:8080 --env PORT=8080 --name shields shieldsio/shields:next
 
-> gh-badges@1.1.2 start /usr/src/app
-> node server.js
-
-http://[::1]/
+Configuration:
+...
+0916211515 Server is starting up: http://0.0.0.0:8080/
 ```
 
 Assuming Docker is running locally, you should be able to get to the
@@ -90,8 +114,6 @@ application at http://localhost:8080/.
 If you run Docker in a virtual machine (such as boot2docker or Docker Machine)
 then you will need to replace `localhost` with the IP address of that virtual
 machine.
-
-[shields.example.env]: ../shields.example.env
 
 ## Raster server
 
@@ -113,20 +135,6 @@ preconfigured raster server.
 
 [raster server]: https://github.com/badges/svg-to-image-proxy
 [micro]: https://github.com/zeit/micro
-
-## Zeit Now
-
-To deploy using Zeit Now:
-
-```console
-npm run build  # Not sure why, but this needs to be run before deploying.
-now
-```
-
-## Persistence
-
-To enable Redis-backed GitHub token persistence, point `REDIS_URL` to your
-Redis installation.
 
 ## Server secrets
 
@@ -184,19 +192,30 @@ Start the server using the Sentry DSN. You can set it:
 sudo SENTRY_DSN=https://xxx:yyy@sentry.io/zzz node server
 ```
 
-- or by `sentry_dsn` secret property defined in `private/secret.json`
+Or via config as you would do with [server secrets](server-secrets.md):
 
+```yml
+private:
+  sentry_dsn: ...
 ```
+
+```sh
 sudo node server
 ```
 
-### Prometheus
+## Prometheus
 
 Shields uses [prom-client](https://github.com/siimon/prom-client) to provide [default metrics](https://prometheus.io/docs/instrumenting/writing_clientlibs/#standard-and-runtime-collectors). These metrics are disabled by default.
-You can enable them by `METRICS_PROMETHEUS_ENABLED` environment variable.
+You can enable them by `METRICS_PROMETHEUS_ENABLED` and `METRICS_PROMETHEUS_ENDPOINT_ENABLED` environment variables.
 
 ```bash
-METRICS_PROMETHEUS_ENABLED=true npm start
+METRICS_PROMETHEUS_ENABLED=true METRICS_PROMETHEUS_ENDPOINT_ENABLED=true npm start
 ```
 
 Metrics are available at `/metrics` resource.
+
+## Cloudflare
+
+Shields.io uses Cloudflare as a downstream CDN. If your installation does the same,
+you can configure your server to only accept requests coming from Cloudflare's IPs.
+Set `public.requireCloudflare: true`.

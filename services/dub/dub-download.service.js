@@ -1,10 +1,7 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const { metric } = require('../text-formatters')
-const { downloadCount: downloadCountColor } = require('../color-formatters')
-const { nonNegativeInteger } = require('../validators')
-const { BaseJsonService } = require('..')
+import Joi from 'joi'
+import { renderDownloadsBadge } from '../downloads.js'
+import { nonNegativeInteger } from '../validators.js'
+import { BaseJsonService } from '../index.js'
 
 const schema = Joi.object({
   downloads: Joi.object({
@@ -18,82 +15,71 @@ const schema = Joi.object({
 const intervalMap = {
   dd: {
     transform: json => json.downloads.daily,
-    messageSuffix: '/day',
+    interval: 'day',
   },
   dw: {
     transform: json => json.downloads.weekly,
-    messageSuffix: '/week',
+    interval: 'week',
   },
   dm: {
     transform: json => json.downloads.monthly,
-    messageSuffix: '/month',
+    interval: 'month',
   },
   dt: {
     transform: json => json.downloads.total,
-    messageSuffix: '',
+    interval: '',
   },
 }
 
-module.exports = class DubDownloads extends BaseJsonService {
-  static get category() {
-    return 'downloads'
+export default class DubDownloads extends BaseJsonService {
+  static category = 'downloads'
+  static route = {
+    base: 'dub',
+    pattern: ':interval(dd|dw|dm|dt)/:packageName/:version*',
   }
 
-  static get route() {
-    return {
-      base: 'dub',
-      pattern: ':interval(dd|dw|dm|dt)/:packageName/:version*',
-    }
-  }
-
-  static get examples() {
-    return [
-      {
-        title: 'DUB',
-        namedParams: { interval: 'dm', packageName: 'vibe-d' },
-        staticPreview: this.render({ interval: 'dm', downloadCount: 5000 }),
+  static examples = [
+    {
+      title: 'DUB',
+      namedParams: { interval: 'dm', packageName: 'vibe-d' },
+      staticPreview: this.render({ interval: 'dm', downloads: 5000 }),
+    },
+    {
+      title: 'DUB (version)',
+      namedParams: {
+        interval: 'dm',
+        packageName: 'vibe-d',
+        version: '0.8.4',
       },
-      {
-        title: 'DUB (version)',
-        namedParams: {
-          interval: 'dm',
-          packageName: 'vibe-d',
-          version: '0.8.4',
-        },
-        staticPreview: this.render({
-          interval: 'dm',
-          version: '0.8.4',
-          downloadCount: 100,
-        }),
+      staticPreview: this.render({
+        interval: 'dm',
+        version: '0.8.4',
+        downloads: 100,
+      }),
+    },
+    {
+      title: 'DUB (latest)',
+      namedParams: {
+        interval: 'dm',
+        packageName: 'vibe-d',
+        version: 'latest',
       },
-      {
-        title: 'DUB (latest)',
-        namedParams: {
-          interval: 'dm',
-          packageName: 'vibe-d',
-          version: 'latest',
-        },
-        staticPreview: this.render({
-          interval: 'dm',
-          version: 'latest',
-          downloadCount: 100,
-        }),
-      },
-    ]
-  }
+      staticPreview: this.render({
+        interval: 'dm',
+        version: 'latest',
+        downloads: 100,
+      }),
+    },
+  ]
 
-  static get defaultBadgeData() {
-    return { label: 'downloads' }
-  }
+  static defaultBadgeData = { label: 'downloads' }
 
-  static render({ interval, version, downloadCount }) {
-    const { messageSuffix } = intervalMap[interval]
-
-    return {
-      label: version ? `downloads@${version}` : 'downloads',
-      message: `${metric(downloadCount)}${messageSuffix}`,
-      color: downloadCountColor(downloadCount),
-    }
+  static render({ interval, version, downloads }) {
+    return renderDownloadsBadge({
+      downloads,
+      version,
+      interval: intervalMap[interval].interval,
+    })
   }
 
   async fetch({ packageName, version }) {
@@ -109,7 +95,7 @@ module.exports = class DubDownloads extends BaseJsonService {
     const { transform } = intervalMap[interval]
 
     const json = await this.fetch({ packageName, version })
-    const downloadCount = transform(json)
-    return this.constructor.render({ interval, downloadCount, version })
+    const downloads = transform(json)
+    return this.constructor.render({ interval, downloads, version })
   }
 }

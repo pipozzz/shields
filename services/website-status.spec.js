@@ -1,9 +1,7 @@
-'use strict'
+import { test, given } from 'sazerac'
+import { renderWebsiteStatus } from './website-status.js'
 
-const { test, given } = require('sazerac')
-const { renderWebsiteStatus } = require('./website-status')
-
-describe('Website status helpers', function() {
+describe('Website status helpers', function () {
   const customOptions = {
     upMessage: 'groovy',
     upColor: 'papayawhip',

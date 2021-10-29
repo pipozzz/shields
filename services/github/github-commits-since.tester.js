@@ -1,35 +1,51 @@
-'use strict'
+import { withRegex, isMetric } from '../test-validators.js'
+import { createServiceTester } from '../tester.js'
+export const t = await createServiceTester()
 
-const Joi = require('@hapi/joi')
-const { isMetric } = require('../test-validators')
-const t = (module.exports = require('../tester').createServiceTester())
+const isCommitsSince = withRegex(/^(commits since){1}[\s\S]+$/)
 
 t.create('Commits since')
   .get('/badges/shields/a0663d8da53fb712472c02665e6ff7547ba945b7.json')
   .expectBadge({
-    label: Joi.string().regex(/^(commits since){1}[\s\S]+$/),
+    label: isCommitsSince,
     message: isMetric,
     color: 'blue',
   })
 
 t.create('Commits since (branch)')
-  .get('/badges/shields/60be4859585650e8c2b87669e3a39d98ca084e98/gh-pages.json')
+  .get(
+    '/badges/shields/8b87fac3a1538ec20ff20983faf4b6f7e722ef87/historical.json'
+  )
   .expectBadge({
-    label: Joi.string().regex(/^(commits since){1}[\s\S]+$/),
+    label: isCommitsSince,
     message: isMetric,
   })
 
 t.create('Commits since by latest release')
   .get('/microsoft/typescript/latest.json')
   .expectBadge({
-    label: Joi.string().regex(/^(commits since){1}[\s\S]+$/),
+    label: isCommitsSince,
     message: isMetric,
   })
 
 t.create('Commits since by latest release (branch)')
-  .get('/microsoft/typescript/latest/master.json')
+  .get('/microsoft/typescript/latest/main.json')
   .expectBadge({
-    label: Joi.string().regex(/^(commits since){1}[\s\S]+$/),
+    label: isCommitsSince,
+    message: isMetric,
+  })
+
+t.create('Commits since by latest SemVer release')
+  .get('/microsoft/typescript/latest.json?sort=semver')
+  .expectBadge({
+    label: isCommitsSince,
+    message: isMetric,
+  })
+
+t.create('Commits since by latest pre-release')
+  .get('/microsoft/typescript/latest/main.json?include_prereleases')
+  .expectBadge({
+    label: isCommitsSince,
     message: isMetric,
   })
 

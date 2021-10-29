@@ -1,7 +1,6 @@
-'use strict'
-
-const t = (module.exports = require('../tester').createServiceTester())
-const { withRegex, isStarRating } = require('../test-validators')
+import { createServiceTester } from '../tester.js'
+import { withRegex, isStarRating } from '../test-validators.js'
+export const t = await createServiceTester()
 
 const isVscodeRating = withRegex(/[0-5]\.[0-9]{1}\/5?\s*\([0-9]*\)$/)
 
@@ -44,6 +43,8 @@ t.create('rating')
                     version: '1.0.0',
                   },
                 ],
+                releaseDate: '2019-04-13T07:50:27.000Z',
+                lastUpdated: '2019-04-13T07:50:27.000Z',
               },
             ],
           },
@@ -72,6 +73,8 @@ t.create('zero rating')
                     version: '1.0.0',
                   },
                 ],
+                releaseDate: '2019-04-13T07:50:27.000Z',
+                lastUpdated: '2019-04-13T07:50:27.000Z',
               },
             ],
           },
@@ -80,8 +83,8 @@ t.create('zero rating')
   )
   .expectBadge({
     label: 'rating',
-    message: '0.0/5 (0)',
-    color: 'red',
+    message: 'no ratings',
+    color: 'lightgrey',
   })
 
 t.create('stars')
@@ -109,6 +112,8 @@ t.create('stars')
                     version: '1.0.0',
                   },
                 ],
+                releaseDate: '2019-04-13T07:50:27.000Z',
+                lastUpdated: '2019-04-13T07:50:27.000Z',
               },
             ],
           },

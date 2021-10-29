@@ -1,14 +1,11 @@
-'use strict'
+import { isMetric } from '../test-validators.js'
+import { createServiceTester } from '../tester.js'
+export const t = await createServiceTester()
 
-const { isMetric } = require('../test-validators')
-const t = (module.exports = require('../tester').createServiceTester())
-
-t.create('total downloads (valid)')
-  .get('/dt/rails.json')
-  .expectBadge({
-    label: 'downloads',
-    message: isMetric,
-  })
+t.create('total downloads (valid)').get('/dt/rails.json').expectBadge({
+  label: 'downloads',
+  message: isMetric,
+})
 
 t.create('total downloads (not found)')
   .get('/dt/not-a-package.json')

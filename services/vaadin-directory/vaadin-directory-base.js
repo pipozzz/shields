@@ -1,14 +1,10 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const { nonNegativeInteger } = require('../validators')
-const { BaseJsonService } = require('..')
+import Joi from 'joi'
+import { nonNegativeInteger } from '../validators.js'
+import { BaseJsonService } from '../index.js'
 
 const schema = Joi.object({
   ratingCount: nonNegativeInteger,
-  averageRating: Joi.number()
-    .min(0)
-    .required(),
+  averageRating: Joi.number().min(0).required(),
   latestAvailableRelease: Joi.object({
     publicationDate: Joi.date().required(),
     name: Joi.string().required(),
@@ -31,4 +27,4 @@ class BaseVaadinDirectoryService extends BaseJsonService {
   }
 }
 
-module.exports = { BaseVaadinDirectoryService }
+export { BaseVaadinDirectoryService }

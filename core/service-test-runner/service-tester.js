@@ -1,14 +1,13 @@
-'use strict'
 /**
  * @module
  */
 
-const emojic = require('emojic')
-const trace = require('../base-service/trace')
-const frisby = require('./icedfrisby-shields')(
-  // eslint-disable-next-line import/order
-  require('icedfrisby-nock')(require('icedfrisby'))
-)
+import emojic from 'emojic'
+import icedfrisbyNockModule from 'icedfrisby-nock'
+import icedfrisbyModule from 'icedfrisby'
+import trace from '../base-service/trace.js'
+import icedfrisbyShieldsModule from './icedfrisby-shields.js'
+const frisby = icedfrisbyShieldsModule(icedfrisbyNockModule(icedfrisbyModule))
 
 /**
  * Encapsulate a suite of tests. Create new tests using create() and register
@@ -25,7 +24,7 @@ class ServiceTester {
    *    Specifies which tests to run from the CLI or pull requests
    * @param {string} attrs.title
    *    Prints in the Mocha output
-   * @param {string} attrs.path
+   * @param {string} attrs.pathPrefix
    *    Prefix which is automatically prepended to each tested URI.
    *    The default is `/${attrs.id}`.
    */
@@ -84,8 +83,8 @@ class ServiceTester {
       .before(() => {
         this.beforeEach()
       })
-      // eslint-disable-next-line mocha/prefer-arrow-callback
-      .finally(function() {
+      // eslint-disable-next-line mocha/prefer-arrow-callback, promise/prefer-await-to-then
+      .finally(function () {
         // `this` is the IcedFrisby instance.
         let responseBody
         try {
@@ -115,20 +114,24 @@ class ServiceTester {
    * @param {object} attrs Refer to individual attrs
    * @param {string} attrs.baseUrl base URL for test server
    * @param {boolean} attrs.skipIntercepted skip tests which intercept requests
+   * @param {object} attrs.retry retry configuration
+   * @param {number} attrs.retry.count number of times to retry test
+   * @param {number} attrs.retry.backoff number of milliseconds to add to the wait between each retry
    */
-  toss({ baseUrl, skipIntercepted }) {
+  toss({ baseUrl, skipIntercepted, retry: { count, backoff } }) {
     const { specs, pathPrefix } = this
     const testerBaseUrl = `${baseUrl}${pathPrefix}`
 
     const fn = this._only ? describe.only : describe
     // eslint-disable-next-line mocha/prefer-arrow-callback
-    fn(this.title, function() {
+    fn(this.title, function () {
       specs.forEach(spec => {
         spec._message = `[${spec.hasIntercept ? 'mocked' : 'live'}] ${
           spec._message
         }`
         if (!skipIntercepted || !spec.intercepted) {
           spec.baseUri(testerBaseUrl)
+          spec.retry(count, backoff)
           spec.toss()
         }
       })
@@ -136,4 +139,4 @@ class ServiceTester {
   }
 }
 
-module.exports = ServiceTester
+export default ServiceTester

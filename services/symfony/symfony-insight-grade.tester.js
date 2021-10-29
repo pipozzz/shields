@@ -1,11 +1,10 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const t = (module.exports = require('../tester').createServiceTester())
-const { sampleProjectUuid, checkShouldSkip } = require('./symfony-test-helpers')
+import Joi from 'joi'
+import { createServiceTester } from '../tester.js'
+import { sampleProjectUuid, noSymfonyToken } from './symfony-test-helpers.js'
+export const t = await createServiceTester()
 
 t.create('valid project grade')
-  .skipWhen(checkShouldSkip)
+  .skipWhen(noSymfonyToken)
   .get(`/${sampleProjectUuid}.json`)
   .timeout(15000)
   .expectBadge({
@@ -20,7 +19,7 @@ t.create('valid project grade')
   })
 
 t.create('nonexistent project')
-  .skipWhen(checkShouldSkip)
+  .skipWhen(noSymfonyToken)
   .get('/45afb680-d4e6-4e66-93ea-bcfa79eb8a88.json')
   .expectBadge({
     label: 'symfony insight',

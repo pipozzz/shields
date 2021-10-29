@@ -1,24 +1,21 @@
-'use strict'
-
-const makeBadge = require('../../gh-badges/lib/make-badge')
-const BaseService = require('./base')
-const {
+import makeBadge from '../../badge-maker/lib/make-badge.js'
+import BaseService from './base.js'
+import {
   serverHasBeenUpSinceResourceCached,
   setCacheHeadersForStaticResource,
-} = require('./cache-headers')
-const { makeSend } = require('./legacy-result-sender')
-const coalesceBadge = require('./coalesce-badge')
-const { prepareRoute, namedParamsForMatch } = require('./route')
+} from './cache-headers.js'
+import { makeSend } from './legacy-result-sender.js'
+import { MetricHelper } from './metric-helper.js'
+import coalesceBadge from './coalesce-badge.js'
+import { prepareRoute, namedParamsForMatch } from './route.js'
 
-module.exports = class BaseStaticService extends BaseService {
-  static register({ camp, requestCounter }, serviceConfig) {
-    const {
-      profiling: { makeBadge: shouldProfileMakeBadge },
-    } = serviceConfig
+export default class BaseStaticService extends BaseService {
+  static register({ camp, metricInstance }, serviceConfig) {
     const { regex, captureNames } = prepareRoute(this.route)
 
-    const serviceRequestCounter = this._createServiceRequestCounter({
-      requestCounter,
+    const metricHelper = MetricHelper.create({
+      metricInstance,
+      ServiceClass: this,
     })
 
     camp.route(regex, async (queryParams, match, end, ask) => {
@@ -28,6 +25,8 @@ module.exports = class BaseStaticService extends BaseService {
         ask.res.end()
         return
       }
+
+      const metricHandle = metricHelper.startRequest()
 
       const namedParams = namedParamsForMatch(captureNames, match, this)
       const serviceData = await this.invoke(
@@ -48,19 +47,12 @@ module.exports = class BaseStaticService extends BaseService {
       const format = (match.slice(-1)[0] || '.svg').replace(/^\./, '')
       badgeData.format = format
 
-      if (shouldProfileMakeBadge) {
-        console.time('makeBadge total')
-      }
-      const svg = makeBadge(badgeData)
-      if (shouldProfileMakeBadge) {
-        console.timeEnd('makeBadge total')
-      }
-
       setCacheHeadersForStaticResource(ask.res)
 
+      const svg = makeBadge(badgeData)
       makeSend(format, ask.res, end)(svg)
 
-      serviceRequestCounter.inc()
+      metricHandle.noteResponseSent()
     })
   }
 }

@@ -1,8 +1,6 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const { colorScale } = require('../color-formatters')
-const { optionalUrl } = require('../validators')
+import Joi from 'joi'
+import { colorScale } from '../color-formatters.js'
+import { optionalUrl } from '../validators.js'
 
 const ratingPercentageScaleSteps = [10, 20, 50, 100]
 const ratingScaleColors = [
@@ -45,9 +43,7 @@ const queryParamSchema = Joi.object({
 const queryParamWithFormatSchema = Joi.object({
   sonarVersion: sonarVersionSchema,
   server: optionalUrl.required(),
-  format: Joi.string()
-    .allow('short', 'long')
-    .optional(),
+  format: Joi.string().allow('short', 'long').optional(),
 }).required()
 
 const keywords = ['sonarcloud', 'sonarqube']
@@ -62,7 +58,7 @@ const documentation = `
   </p
 `
 
-module.exports = {
+export {
   getLabel,
   isLegacyVersion,
   queryParamSchema,

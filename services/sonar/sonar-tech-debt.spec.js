@@ -1,9 +1,7 @@
-'use strict'
+import { test, given } from 'sazerac'
+import SonarTechDebt from './sonar-tech-debt.service.js'
 
-const { test, given } = require('sazerac')
-const SonarTechDebt = require('./sonar-tech-debt.service')
-
-describe('SonarTechDebt', function() {
+describe('SonarTechDebt', function () {
   test(SonarTechDebt.render, () => {
     given({ debt: 0 }).expect({
       label: undefined,

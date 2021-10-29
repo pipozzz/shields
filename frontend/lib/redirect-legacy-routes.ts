@@ -1,11 +1,15 @@
 import { navigate } from 'gatsby'
 
-export default function redirectLegacyRoutes() {
+export default function redirectLegacyRoutes(): void {
   const { hash } = window.location
   if (hash && hash.startsWith('#/examples/')) {
     const category = hash.replace('#/examples/', '')
-    navigate(`category/${category}`)
+    navigate(`category/${category}`, {
+      replace: true,
+    })
   } else if (hash === '#/endpoint') {
-    navigate('endpoint')
+    navigate('endpoint', {
+      replace: true,
+    })
   }
 }

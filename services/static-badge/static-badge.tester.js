@@ -1,6 +1,6 @@
-'use strict'
-
-const t = (module.exports = require('../tester').createServiceTester())
+import Joi from 'joi'
+import { createServiceTester } from '../tester.js'
+export const t = await createServiceTester()
 
 t.create('Shields colorscheme color')
   .get('/badge/label-message-blue.json')
@@ -24,7 +24,11 @@ t.create('All one color')
 
 t.create('Not a valid color')
   .get('/badge/label-message-notacolor.json')
-  .expectBadge({ label: 'label', message: 'message', color: null })
+  .expectBadge({
+    label: 'label',
+    message: 'message',
+    color: Joi.forbidden(),
+  })
 
 t.create('Missing message')
   .get('/badge/label--blue.json')

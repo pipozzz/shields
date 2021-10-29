@@ -1,16 +1,12 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const { BaseJsonService } = require('..')
+import Joi from 'joi'
+import { BaseJsonService } from '../index.js'
 
 const schema = Joi.object({
   info: Joi.object({
     version: Joi.string().required(),
     // https://github.com/badges/shields/issues/2022
     license: Joi.string().allow(''),
-    classifiers: Joi.array()
-      .items(Joi.string())
-      .required(),
+    classifiers: Joi.array().items(Joi.string()).required(),
   }).required(),
   releases: Joi.object()
     .pattern(
@@ -26,7 +22,7 @@ const schema = Joi.object({
     .required(),
 }).required()
 
-module.exports = class PypiBase extends BaseJsonService {
+export default class PypiBase extends BaseJsonService {
   static buildRoute(base) {
     return {
       base,

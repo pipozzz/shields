@@ -1,55 +1,73 @@
-'use strict'
+import Joi from 'joi'
+import { renderLicenseBadge } from '../licenses.js'
+import { optionalUrl } from '../validators.js'
+import { NotFound } from '../index.js'
+import {
+  keywords,
+  BasePackagistService,
+  customServerDocumentationFragment,
+} from './packagist-base.js'
 
-const Joi = require('@hapi/joi')
-const { renderLicenseBadge } = require('../licenses')
-const { keywords, BasePackagistService } = require('./packagist-base')
+const packageSchema = Joi.object()
+  .pattern(
+    /^/,
+    Joi.object({
+      'default-branch': Joi.bool(),
+      license: Joi.array().required(),
+    }).required()
+  )
+  .required()
 
 const schema = Joi.object({
-  package: Joi.object({
-    versions: Joi.object({
-      'dev-master': Joi.object({
-        license: Joi.array().required(),
-      }).required(),
-    }).required(),
-  }).required(),
+  packages: Joi.object().pattern(/^/, packageSchema).required(),
 }).required()
 
-module.exports = class PackagistLicense extends BasePackagistService {
-  static get category() {
-    return 'license'
+const queryParamSchema = Joi.object({
+  server: optionalUrl,
+}).required()
+
+export default class PackagistLicense extends BasePackagistService {
+  static category = 'license'
+
+  static route = {
+    base: 'packagist/l',
+    pattern: ':user/:repo',
+    queryParamSchema,
   }
 
-  static get route() {
-    return {
-      base: 'packagist/l',
-      pattern: ':user/:repo',
+  static examples = [
+    {
+      title: 'Packagist License',
+      namedParams: { user: 'doctrine', repo: 'orm' },
+      staticPreview: renderLicenseBadge({ license: 'MIT' }),
+      keywords,
+    },
+    {
+      title: 'Packagist License (custom server)',
+      namedParams: { user: 'doctrine', repo: 'orm' },
+      queryParams: { server: 'https://packagist.org' },
+      staticPreview: renderLicenseBadge({ license: 'MIT' }),
+      keywords,
+      documentation: customServerDocumentationFragment,
+    },
+  ]
+
+  static defaultBadgeData = {
+    label: 'license',
+  }
+
+  transform({ json, user, repo }) {
+    const branch = this.getDefaultBranch(json, user, repo)
+    if (!branch) {
+      throw new NotFound({ prettyMessage: 'default branch not found' })
     }
+    const { license } = branch
+    return { license }
   }
 
-  static get examples() {
-    return [
-      {
-        title: 'Packagist',
-        namedParams: { user: 'doctrine', repo: 'orm' },
-        staticPreview: renderLicenseBadge({ license: 'MIT' }),
-        keywords,
-      },
-    ]
-  }
-
-  static get defaultBadgeData() {
-    return {
-      label: 'license',
-    }
-  }
-
-  transform({ json }) {
-    return { license: json.package.versions['dev-master'].license }
-  }
-
-  async handle({ user, repo }) {
-    const json = await this.fetch({ user, repo, schema })
-    const { license } = this.transform({ json })
+  async handle({ user, repo }, { server }) {
+    const json = await this.fetch({ user, repo, schema, server })
+    const { license } = this.transform({ json, user, repo })
     return renderLicenseBadge({ license })
   }
 }

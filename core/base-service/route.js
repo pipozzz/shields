@@ -1,20 +1,16 @@
-'use strict'
-
-const escapeStringRegexp = require('escape-string-regexp')
-const Joi = require('@hapi/joi')
-const pathToRegexp = require('path-to-regexp')
+import escapeStringRegexp from 'escape-string-regexp'
+import Joi from 'joi'
+import { pathToRegexp } from 'path-to-regexp'
 
 function makeFullUrl(base, partialUrl) {
   return `/${[base, partialUrl].filter(Boolean).join('/')}`
 }
 
 const isValidRoute = Joi.object({
-  base: Joi.string()
-    .allow('')
-    .required(),
+  base: Joi.string().allow('').required(),
   pattern: Joi.string().allow(''),
   format: Joi.string(),
-  capture: Joi.alternatives().when('format', {
+  capture: Joi.alternatives().conditional('format', {
     is: Joi.string().required(),
     then: Joi.array().items(Joi.string().required()),
   }),
@@ -69,14 +65,14 @@ function namedParamsForMatch(captureNames = [], match, ServiceClass) {
 
 function getQueryParamNames({ queryParamSchema }) {
   if (queryParamSchema) {
-    const { children, renames = [] } = Joi.describe(queryParamSchema)
-    return Object.keys(children).concat(renames.map(({ from }) => from))
+    const { keys, renames = [] } = queryParamSchema.describe()
+    return Object.keys(keys).concat(renames.map(({ from }) => from))
   } else {
     return []
   }
 }
 
-module.exports = {
+export {
   makeFullUrl,
   isValidRoute,
   assertValidRoute,

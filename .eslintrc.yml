@@ -1,10 +1,13 @@
 extends:
+  - standard
   - standard-jsx
   - standard-react
-  - plugin:jsdoc/recommended
   - plugin:@typescript-eslint/recommended
-  - prettier/@typescript-eslint
-  - prettier/standard
+  - prettier
+  - eslint:recommended
+
+globals:
+  JSX: 'readonly'
 
 parserOptions:
   # Override eslint-config-standard, which incorrectly sets this to "module",
@@ -14,6 +17,8 @@ parserOptions:
 settings:
   react:
     version: '16.8'
+  jsdoc:
+    mode: jsdoc
 
 plugins:
   - chai-friendly
@@ -35,9 +40,10 @@ overrides:
       - '!frontend/**/*.js'
     env:
       node: true
+      es6: true
     rules:
       no-console: 'off'
-      '@typescript-eslint/no-var-requires': off
+      '@typescript-eslint/explicit-module-boundary-types': 'off'
 
   - files:
       - '**/*.@(ts|tsx)'
@@ -46,9 +52,20 @@ overrides:
     parser: '@typescript-eslint/parser'
     rules:
       # Argh.
-      '@typescript-eslint/explicit-function-return-type': 'off'
+      '@typescript-eslint/explicit-function-return-type':
+        ['error', { 'allowExpressions': true }]
+      '@typescript-eslint/no-empty-function': 'error'
+      '@typescript-eslint/no-var-requires': 'error'
       '@typescript-eslint/no-object-literal-type-assertion': 'off'
+      '@typescript-eslint/no-explicit-any': 'error'
+      '@typescript-eslint/ban-ts-ignore': 'off'
+      '@typescript-eslint/explicit-module-boundary-types': 'off'
 
+  - files:
+      - core/**/*.ts
+    parserOptions:
+      sourceType: 'module'
+    parser: '@typescript-eslint/parser'
   - files:
       - gatsby-browser.js
       - 'frontend/**/*.@(js|ts|tsx)'
@@ -90,6 +107,8 @@ overrides:
   - files:
       - '**/*.spec.@(js|ts|tsx)'
       - '**/*.integration.js'
+      - '**/test-helpers.js'
+      - 'core/service-test-runner/**/*.js'
     env:
       mocha: true
     rules:
@@ -104,17 +123,19 @@ rules:
   # Allow unused parameters. In callbacks, removing them seems to obscure
   # what the functions are doing.
   '@typescript-eslint/no-unused-vars': ['error', { 'args': 'none' }]
-  no-unused-vars: off
+  no-unused-vars: 'off'
 
-  '@typescript-eslint/no-var-requires': error
+  '@typescript-eslint/no-var-requires': 'off'
+
+  '@typescript-eslint/no-use-before-define': 'error'
+  no-use-before-define: 'off'
 
   # These should be disabled by eslint-config-prettier, but are not.
-  spaced-comment: 'off'
+  no-extra-semi: 'off'
 
   # Shields additions.
   no-var: 'error'
   prefer-const: 'error'
-  strict: 'error'
   arrow-body-style: ['error', 'as-needed']
   no-extension-in-require/main: 'error'
   object-shorthand: ['error', 'properties']
@@ -124,18 +145,54 @@ rules:
   new-cap: ['error', { 'capIsNew': true }]
   import/order: ['error', { 'newlines-between': 'never' }]
 
+  # Account for destructuring responses from upstream services,
+  # many of which do not follow camelcase
+  # Based on original rule configuration from eslint-config-standard
+  camelcase:
+    [
+      'error',
+      {
+        ignoreDestructuring: true,
+        properties: 'never',
+        ignoreGlobals: true,
+        allow: ['^UNSAFE_'],
+      },
+    ]
+
   # Chai friendly.
   no-unused-expressions: 'off'
   chai-friendly/no-unused-expressions: 'error'
 
-  # Disable some rules from jsdoc/recommended.
-  jsdoc/require-jsdoc: off
+  # jsdoc plugin:
+  # don't require every class/function to have a docblock
+  jsdoc/require-jsdoc: 'off'
+
+  # allow Joi as an undefined type
+  jsdoc/no-undefined-types: ['error', { definedTypes: ['Joi'] }]
+
+  # all the other recommended rules as errors (not warnings)
+  jsdoc/check-alignment: 'error'
+  jsdoc/check-param-names: 'error'
+  jsdoc/check-tag-names: 'error'
+  jsdoc/check-types: 'error'
+  jsdoc/implements-on-classes: 'error'
+  jsdoc/newline-after-description: 'error'
+  jsdoc/require-param: 'error'
+  jsdoc/require-param-description: 'error'
+  jsdoc/require-param-name: 'error'
+  jsdoc/require-param-type: 'error'
+  jsdoc/require-returns: 'error'
+  jsdoc/require-returns-check: 'error'
+  jsdoc/require-returns-description: 'error'
+  jsdoc/require-returns-type: 'error'
+  jsdoc/valid-types: 'error'
 
   # Disable some from TypeScript.
   '@typescript-eslint/camelcase': off
+  '@typescript-eslint/explicit-function-return-type': 'off'
+  '@typescript-eslint/no-empty-function': 'off'
 
   react/jsx-sort-props: 'error'
-  react/prop-types: 'off'
   react-hooks/rules-of-hooks: 'error'
   react-hooks/exhaustive-deps: 'error'
   jsx-quotes: ['error', 'prefer-double']

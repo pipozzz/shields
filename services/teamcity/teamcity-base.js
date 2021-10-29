@@ -1,39 +1,26 @@
-'use strict'
+import { BaseJsonService } from '../index.js'
 
-const { BaseJsonService } = require('..')
-
-module.exports = class TeamCityBase extends BaseJsonService {
-  static get auth() {
-    return { userKey: 'teamcity_user', passKey: 'teamcity_pass' }
+export default class TeamCityBase extends BaseJsonService {
+  static auth = {
+    userKey: 'teamcity_user',
+    passKey: 'teamcity_pass',
+    serviceKey: 'teamcity',
   }
 
-  async fetch({
-    protocol,
-    hostAndPath,
-    apiPath,
-    schema,
-    qs = {},
-    errorMessages = {},
-  }) {
-    if (!hostAndPath) {
-      // If hostAndPath is undefined then the user specified the legacy default path
-      protocol = 'https'
-      hostAndPath = 'teamcity.jetbrains.com'
-    }
+  async fetch({ url, schema, qs = {}, errorMessages = {} }) {
     // JetBrains API Auth Docs: https://confluence.jetbrains.com/display/TCD18/REST+API#RESTAPI-RESTAuthentication
     const options = { qs }
-    const auth = this.authHelper.basicAuth
-    if (auth) {
-      options.auth = auth
-    } else {
+    if (!this.authHelper.isConfigured) {
       qs.guest = 1
     }
 
-    return this._requestJson({
-      url: `${protocol}://${hostAndPath}/${apiPath}`,
-      schema,
-      options,
-      errorMessages: { 404: 'build not found', ...errorMessages },
-    })
+    return this._requestJson(
+      this.authHelper.withBasicAuth({
+        url,
+        schema,
+        options,
+        errorMessages: { 404: 'build not found', ...errorMessages },
+      })
+    )
   }
 }

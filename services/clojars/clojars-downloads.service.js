@@ -1,44 +1,21 @@
-'use strict'
+import { renderDownloadsBadge } from '../downloads.js'
+import { BaseClojarsService } from './clojars-base.js'
 
-const { metric } = require('../text-formatters')
-const { downloadCount: downloadsColor } = require('../color-formatters')
-const { BaseClojarsService } = require('./clojars-base')
+export default class ClojarsDownloads extends BaseClojarsService {
+  static category = 'downloads'
+  static route = { base: 'clojars/dt', pattern: ':clojar+' }
 
-module.exports = class ClojarsDownloads extends BaseClojarsService {
-  static get category() {
-    return 'downloads'
-  }
+  static examples = [
+    {
+      namedParams: { clojar: 'prismic' },
+      staticPreview: renderDownloadsBadge({ downloads: 117 }),
+    },
+  ]
 
-  static get route() {
-    return {
-      base: 'clojars/dt',
-      pattern: ':clojar+',
-    }
-  }
-
-  static get examples() {
-    return [
-      {
-        namedParams: { clojar: 'prismic' },
-        staticPreview: this.render({ downloads: 117 }),
-      },
-    ]
-  }
-
-  static get defaultBadgeData() {
-    return { label: 'downloads' }
-  }
-
-  static render({ downloads }) {
-    return {
-      label: 'downloads',
-      message: metric(downloads),
-      color: downloadsColor(downloads),
-    }
-  }
+  static defaultBadgeData = { label: 'downloads' }
 
   async handle({ clojar }) {
     const json = await this.fetch({ clojar })
-    return this.constructor.render({ downloads: json.downloads })
+    return renderDownloadsBadge({ downloads: json.downloads })
   }
 }

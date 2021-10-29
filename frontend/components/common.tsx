@@ -5,7 +5,7 @@ export const noAutocorrect = Object.freeze({
   autoComplete: 'off',
   autoCorrect: 'off',
   autoCapitalize: 'off',
-  spellCheck: 'false',
+  spellcheck: 'false',
 })
 
 export const nonBreakingSpace = '\u00a0'
@@ -59,23 +59,35 @@ const BadgeWrapper = styled.span<BadgeWrapperProps>`
     `};
 `
 
+interface BadgeProps extends React.HTMLAttributes<HTMLImageElement> {
+  src: string
+  alt?: string
+  display?: 'inline' | 'block' | 'inline-block'
+  height?: string
+  clickable?: boolean
+  object?: boolean
+}
+
 export function Badge({
   src,
   alt = '',
   display = 'inline',
   height = '20px',
   clickable = false,
+  object = false,
   ...rest
-}: {
-  src: string
-  alt?: string
-  display?: 'inline' | 'block' | 'inline-block'
-  height?: string
-  clickable?: boolean
-}) {
+}: BadgeProps): JSX.Element {
   return (
     <BadgeWrapper clickable={clickable} display={display} height={height}>
-      {src ? <img alt={alt} src={src} {...rest} /> : nonBreakingSpace}
+      {src ? (
+        object ? (
+          <object data={src}>alt</object>
+        ) : (
+          <img alt={alt} src={src} {...rest} />
+        )
+      ) : (
+        nonBreakingSpace
+      )}
     </BadgeWrapper>
   )
 }

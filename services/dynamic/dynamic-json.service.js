@@ -1,54 +1,17 @@
-'use strict'
+import { MetricNames } from '../../core/base-service/metric-helper.js'
+import { BaseJsonService } from '../index.js'
+import { createRoute } from './dynamic-helpers.js'
+import jsonPath from './json-path.js'
 
-const Joi = require('@hapi/joi')
-const jp = require('jsonpath')
-const { renderDynamicBadge, errorMessages } = require('../dynamic-common')
-const { createRoute } = require('./dynamic-helpers')
-const { BaseJsonService, InvalidParameter, InvalidResponse } = require('..')
+export default class DynamicJson extends jsonPath(BaseJsonService) {
+  static enabledMetrics = [MetricNames.SERVICE_RESPONSE_SIZE]
+  static route = createRoute('json')
 
-module.exports = class DynamicJson extends BaseJsonService {
-  static get category() {
-    return 'dynamic'
-  }
-
-  static get route() {
-    return createRoute('json')
-  }
-
-  static get defaultBadgeData() {
-    return {
-      label: 'custom badge',
-    }
-  }
-
-  async handle(namedParams, { url, query: pathExpression, prefix, suffix }) {
-    const data = await this._requestJson({
-      schema: Joi.any(),
+  async fetch({ schema, url, errorMessages }) {
+    return this._requestJson({
+      schema,
       url,
       errorMessages,
     })
-
-    let values
-    try {
-      values = jp.query(data, pathExpression)
-    } catch (e) {
-      const { message } = e
-      if (
-        message.startsWith('Lexical error') ||
-        message.startsWith('Parse error')
-      ) {
-        throw new InvalidParameter({
-          prettyMessage: 'unparseable jsonpath query',
-        })
-      } else {
-        throw e
-      }
-    }
-
-    if (!values.length) {
-      throw new InvalidResponse({ prettyMessage: 'no result' })
-    }
-
-    return renderDynamicBadge({ value: values, prefix, suffix })
   }
 }

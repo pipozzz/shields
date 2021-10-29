@@ -1,10 +1,7 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const { downloadCount } = require('../color-formatters')
-const { metric } = require('../text-formatters')
-const { nonNegativeInteger } = require('../validators')
-const { BaseJsonService } = require('..')
+import Joi from 'joi'
+import { renderDownloadsBadge } from '../downloads.js'
+import { nonNegativeInteger } from '../validators.js'
+import { BaseJsonService } from '../index.js'
 
 const ansibleRoleSchema = Joi.object({
   download_count: nonNegativeInteger,
@@ -27,71 +24,40 @@ class AnsibleGalaxyRole extends BaseJsonService {
 }
 
 class AnsibleGalaxyRoleDownloads extends AnsibleGalaxyRole {
-  static get category() {
-    return 'downloads'
-  }
+  static category = 'downloads'
+  static route = { base: 'ansible/role/d', pattern: ':roleId' }
 
-  static get route() {
-    return {
-      base: 'ansible/role/d',
-      pattern: ':roleId',
-    }
-  }
+  static examples = [
+    {
+      title: 'Ansible Role',
+      namedParams: { roleId: '3078' },
+      staticPreview: renderDownloadsBadge({ downloads: 76 }),
+    },
+  ]
 
-  static get examples() {
-    return [
-      {
-        title: 'Ansible Role',
-        namedParams: { roleId: '3078' },
-        staticPreview: this.render({ downloads: 76 }),
-      },
-    ]
-  }
-
-  static get defaultBadgeData() {
-    return { label: 'role downloads' }
-  }
-
-  static render({ downloads }) {
-    return {
-      message: metric(downloads),
-      color: downloadCount(downloads),
-    }
-  }
+  static defaultBadgeData = { label: 'role downloads' }
 
   async handle({ roleId }) {
     const json = await this.fetch({ roleId })
-    return this.constructor.render({ downloads: json.download_count })
+    return renderDownloadsBadge({ downloads: json.download_count })
   }
 }
 
 class AnsibleGalaxyRoleName extends AnsibleGalaxyRole {
-  static get category() {
-    return 'other'
-  }
+  static category = 'other'
+  static route = { base: 'ansible/role', pattern: ':roleId' }
 
-  static get route() {
-    return {
-      base: 'ansible/role',
-      pattern: ':roleId',
-    }
-  }
+  static examples = [
+    {
+      title: 'Ansible Role',
+      namedParams: { roleId: '3078' },
+      staticPreview: this.render({
+        name: 'ansible-roles.sublimetext3_packagecontrol',
+      }),
+    },
+  ]
 
-  static get examples() {
-    return [
-      {
-        title: 'Ansible Role',
-        namedParams: { roleId: '3078' },
-        staticPreview: this.render({
-          name: 'ansible-roles.sublimetext3_packagecontrol',
-        }),
-      },
-    ]
-  }
-
-  static get defaultBadgeData() {
-    return { label: 'role' }
-  }
+  static defaultBadgeData = { label: 'role' }
 
   static render({ name }) {
     return { message: name, color: 'blue' }
@@ -104,7 +70,4 @@ class AnsibleGalaxyRoleName extends AnsibleGalaxyRole {
   }
 }
 
-module.exports = {
-  AnsibleGalaxyRoleDownloads,
-  AnsibleGalaxyRoleName,
-}
+export { AnsibleGalaxyRoleDownloads, AnsibleGalaxyRoleName }

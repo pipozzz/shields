@@ -1,40 +1,40 @@
-'use strict'
-
-const { colorScale } = require('../color-formatters')
-const { fetchProject } = require('./librariesio-common')
-const { BaseJsonService } = require('..')
+import { colorScale } from '../color-formatters.js'
+import LibrariesIoBase from './librariesio-base.js'
 
 const sourceRankColor = colorScale([10, 15, 20, 25, 30])
 
-module.exports = class LibrariesIoSourcerank extends BaseJsonService {
-  static get category() {
-    return 'rating'
+export default class LibrariesIoSourcerank extends LibrariesIoBase {
+  static category = 'rating'
+
+  static route = {
+    base: 'librariesio/sourcerank',
+    pattern: ':platform/:scope(@[^/]+)?/:packageName',
   }
 
-  static get route() {
-    return {
-      base: 'librariesio/sourcerank',
+  static examples = [
+    {
+      title: 'Libraries.io SourceRank',
       pattern: ':platform/:packageName',
-    }
-  }
-
-  static get examples() {
-    return [
-      {
-        title: 'Libraries.io SourceRank',
-        namedParams: {
-          platform: 'npm',
-          packageName: 'got',
-        },
-        staticPreview: this.render({ rank: 25 }),
+      namedParams: {
+        platform: 'npm',
+        packageName: 'got',
       },
-    ]
-  }
+      staticPreview: this.render({ rank: 25 }),
+    },
+    {
+      title: 'Libraries.io SourceRank, scoped npm package',
+      pattern: ':platform/:scope/:packageName',
+      namedParams: {
+        platform: 'npm',
+        scope: '@babel',
+        packageName: 'core',
+      },
+      staticPreview: this.render({ rank: 3 }),
+    },
+  ]
 
-  static get defaultBadgeData() {
-    return {
-      label: 'sourcerank',
-    }
+  static defaultBadgeData = {
+    label: 'sourcerank',
   }
 
   static render({ rank }) {
@@ -44,9 +44,10 @@ module.exports = class LibrariesIoSourcerank extends BaseJsonService {
     }
   }
 
-  async handle({ platform, packageName }) {
-    const { rank } = await fetchProject(this, {
+  async handle({ platform, scope, packageName }) {
+    const { rank } = await this.fetchProject({
       platform,
+      scope,
       packageName,
     })
     return this.constructor.render({ rank })

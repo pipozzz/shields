@@ -1,14 +1,12 @@
-'use strict'
+import Camp from '@shields_io/camp'
+import { expect } from 'chai'
+import nock from 'nock'
+import portfinder from 'portfinder'
+import got from '../core/got-test-client.js'
+import { setRoutes, githubLicense } from './suggest.js'
+import GithubApiProvider from './github/github-api-provider.js'
 
-const Camp = require('camp')
-const { expect } = require('chai')
-const nock = require('nock')
-const portfinder = require('portfinder')
-const got = require('../core/got-test-client')
-const { setRoutes, githubLicense } = require('./suggest')
-const GithubApiProvider = require('./github/github-api-provider')
-
-describe('Badge suggestions', function() {
+describe('Badge suggestions', function () {
   const githubApiBaseUrl = 'https://api.github.test'
   const apiProvider = new GithubApiProvider({
     baseUrl: githubApiBaseUrl,
@@ -16,9 +14,9 @@ describe('Badge suggestions', function() {
     withPooling: false,
   })
 
-  describe('GitHub license', function() {
-    context('When html_url included in response', function() {
-      it('Should link to it', async function() {
+  describe('GitHub license', function () {
+    context('When html_url included in response', function () {
+      it('Should link to it', async function () {
         const scope = nock(githubApiBaseUrl)
           .get('/repos/atom/atom/license')
           .reply(200, {
@@ -46,8 +44,8 @@ describe('Badge suggestions', function() {
       })
     })
 
-    context('When html_url not included in response', function() {
-      it('Should link to the repo', async function() {
+    context('When html_url not included in response', function () {
+      it('Should link to the repo', async function () {
         const scope = nock(githubApiBaseUrl)
           .get('/repos/atom/atom/license')
           .reply(200, {
@@ -69,19 +67,19 @@ describe('Badge suggestions', function() {
     })
   })
 
-  describe('Scoutcamp integration', function() {
+  describe('Scoutcamp integration', function () {
     let port, baseUrl
-    before(async function() {
+    before(async function () {
       port = await portfinder.getPortPromise()
       baseUrl = `http://127.0.0.1:${port}`
     })
 
     let camp
-    before(async function() {
+    before(async function () {
       camp = Camp.start({ port, hostname: '::' })
       await new Promise(resolve => camp.on('listening', () => resolve()))
     })
-    after(async function() {
+    after(async function () {
       if (camp) {
         await new Promise(resolve => camp.close(resolve))
         camp = undefined
@@ -89,12 +87,12 @@ describe('Badge suggestions', function() {
     })
 
     const origin = 'https://example.test'
-    before(function() {
+    before(function () {
       setRoutes([origin], apiProvider, camp)
     })
 
-    context('without an origin header', function() {
-      it('returns the expected suggestions', async function() {
+    context('without an origin header', function () {
+      it('returns the expected suggestions', async function () {
         const scope = nock(githubApiBaseUrl)
           .get('/repos/atom/atom/license')
           .reply(200, {
@@ -113,7 +111,7 @@ describe('Badge suggestions', function() {
             'https://github.com/atom/atom'
           )}`,
           {
-            json: true,
+            responseType: 'json',
           }
         )
         expect(statusCode).to.equal(200)
@@ -157,15 +155,13 @@ describe('Badge suggestions', function() {
             },
             {
               title: 'Twitter',
-              link:
-                'https://twitter.com/intent/tweet?text=Wow:&url=https%3A%2F%2Fgithub.com%2Fatom%2Fatom',
+              link: 'https://twitter.com/intent/tweet?text=Wow:&url=https%3A%2F%2Fgithub.com%2Fatom%2Fatom',
               example: {
-                pattern: '/twitter/url/:protocol(https|http)/:hostAndPath+',
-                namedParams: {
-                  protocol: 'https',
-                  hostAndPath: 'github.com/atom/atom',
+                pattern: '/twitter/url',
+                namedParams: {},
+                queryParams: {
+                  url: 'https://github.com/atom/atom',
                 },
-                queryParams: {},
               },
               preview: {
                 style: 'social',

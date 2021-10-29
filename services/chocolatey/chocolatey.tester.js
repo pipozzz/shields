@@ -1,25 +1,21 @@
-'use strict'
-
-const {
+import {
   isMetric,
   isVPlusDottedVersionNClauses,
   isVPlusDottedVersionNClausesWithOptionalSuffix,
-} = require('../test-validators')
-const { ServiceTester } = require('../tester')
+} from '../test-validators.js'
+import { ServiceTester } from '../tester.js'
 
-const t = (module.exports = new ServiceTester({
+export const t = new ServiceTester({
   id: 'chocolatey',
   title: 'Chocolatey',
-}))
+})
 
 // downloads
 
-t.create('total downloads (valid)')
-  .get('/dt/scriptcs.json')
-  .expectBadge({
-    label: 'downloads',
-    message: isMetric,
-  })
+t.create('total downloads (valid)').get('/dt/scriptcs.json').expectBadge({
+  label: 'downloads',
+  message: isMetric,
+})
 
 t.create('total downloads (not found)')
   .get('/dt/not-a-real-package.json')
@@ -27,12 +23,10 @@ t.create('total downloads (not found)')
 
 // version
 
-t.create('version (valid)')
-  .get('/v/scriptcs.json')
-  .expectBadge({
-    label: 'chocolatey',
-    message: isVPlusDottedVersionNClauses,
-  })
+t.create('version (valid)').get('/v/scriptcs.json').expectBadge({
+  label: 'chocolatey',
+  message: isVPlusDottedVersionNClauses,
+})
 
 t.create('version (not found)')
   .get('/v/not-a-real-package.json')
@@ -41,12 +35,16 @@ t.create('version (not found)')
 // version (pre)
 
 t.create('version (pre) (valid)')
-  .get('/vpre/scriptcs.json')
+  .get('/v/scriptcs.json?include_prereleases')
   .expectBadge({
     label: 'chocolatey',
     message: isVPlusDottedVersionNClausesWithOptionalSuffix,
   })
 
 t.create('version (pre) (not found)')
-  .get('/vpre/not-a-real-package.json')
+  .get('/v/not-a-real-package.json?include_prereleases')
   .expectBadge({ label: 'chocolatey', message: 'not found' })
+
+t.create('version (legacy redirect: vpre)')
+  .get('/vpre/scriptcs.svg')
+  .expectRedirect('/chocolatey/v/scriptcs.svg?include_prereleases')

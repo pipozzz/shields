@@ -1,7 +1,5 @@
-'use strict'
-
-const { test, given } = require('sazerac')
-const { compare, minorVersion, versionReduction } = require('./php-version')
+import { test, given } from 'sazerac'
+import { compare, minorVersion, versionReduction } from './php-version.js'
 
 const phpReleases = [
   '5.0',
@@ -16,7 +14,7 @@ const phpReleases = [
   '7.2',
 ]
 
-describe('Text PHP version', function() {
+describe('Text PHP version', function () {
   test(minorVersion, () => {
     given('7').expect('7.0')
     given('7.1').expect('7.1')
@@ -48,7 +46,7 @@ describe('Text PHP version', function() {
   })
 })
 
-describe('Composer version comparison', function() {
+describe('Composer version comparison', function () {
   test(compare, () => {
     // composer version scheme ordering
     given('0.9.0', '1.0.0-alpha').expect(-1)

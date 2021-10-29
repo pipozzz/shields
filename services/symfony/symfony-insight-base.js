@@ -1,7 +1,5 @@
-'use strict'
-
-const Joi = require('@hapi/joi')
-const { BaseXmlService } = require('..')
+import Joi from 'joi'
+import { BaseXmlService, NotFound } from '../index.js'
 
 const violationSchema = Joi.object({
   severity: Joi.equal('info', 'minor', 'major', 'critical').required(),
@@ -26,10 +24,7 @@ const schema = Joi.object({
         // the xml nodes to always be parsed as an array. Currently, if the response
         // only contains a single violation then it will be parsed as an object,
         // otherwise it will be parsed as an array.
-        violation: Joi.array()
-          .items(violationSchema)
-          .single()
-          .required(),
+        violation: Joi.array().items(violationSchema).single().required(),
       }),
     }),
   }).required(),
@@ -46,47 +41,46 @@ const gradeColors = {
 }
 
 class SymfonyInsightBase extends BaseXmlService {
-  static get category() {
-    return 'analysis'
+  static category = 'analysis'
+
+  static auth = {
+    userKey: 'sl_insight_userUuid',
+    passKey: 'sl_insight_apiToken',
+    authorizedOrigins: ['https://insight.symfony.com'],
+    isRequired: true,
   }
 
-  static get auth() {
-    return {
-      userKey: 'sl_insight_userUuid',
-      passKey: 'sl_insight_apiToken',
-      isRequired: true,
-    }
-  }
-
-  static get defaultBadgeData() {
-    return {
-      label: 'symfony insight',
-    }
+  static defaultBadgeData = {
+    label: 'symfony insight',
   }
 
   async fetch({ projectUuid }) {
-    return this._requestXml({
-      schema,
-      url: `https://insight.symfony.com/api/projects/${projectUuid}`,
-      options: {
-        headers: {
-          Accept: 'application/vnd.com.sensiolabs.insight+xml',
+    return this._requestXml(
+      this.authHelper.withBasicAuth({
+        schema,
+        url: `https://insight.symfony.com/api/projects/${projectUuid}`,
+        options: {
+          headers: { Accept: 'application/vnd.com.sensiolabs.insight+xml' },
         },
-        auth: this.authHelper.basicAuth,
-      },
-      errorMessages: {
-        401: 'not authorized to access project',
-        404: 'project not found',
-      },
-      parserOptions: {
-        attributeNamePrefix: '',
-        ignoreAttributes: false,
-      },
-    })
+        errorMessages: {
+          401: 'not authorized to access project',
+          404: 'project not found',
+        },
+        parserOptions: {
+          attributeNamePrefix: '',
+          ignoreAttributes: false,
+        },
+      })
+    )
   }
 
   transform({ data }) {
     const lastAnalysis = data.project['last-analysis']
+
+    if (!lastAnalysis) {
+      throw new NotFound({ prettyMessage: 'no analyses found' })
+    }
+
     let numViolations = 0
     let numCriticalViolations = 0
     let numMajorViolations = 0
@@ -130,8 +124,4 @@ class SymfonyInsightBase extends BaseXmlService {
   }
 }
 
-module.exports = {
-  SymfonyInsightBase,
-  keywords,
-  gradeColors,
-}
+export { SymfonyInsightBase, keywords, gradeColors }
