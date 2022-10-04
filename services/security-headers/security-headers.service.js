@@ -72,10 +72,10 @@ export default class SecurityHeaders extends BaseService {
 
   async handle(namedParams, { url, ignoreRedirects }) {
     const { res } = await this._request({
-      url: `https://securityheaders.com`,
+      url: 'https://securityheaders.com',
       options: {
         method: 'HEAD',
-        qs: {
+        searchParams: {
           q: url,
           hide: 'on',
           followRedirects: ignoreRedirects !== undefined ? null : 'on',

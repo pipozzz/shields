@@ -34,8 +34,7 @@ const schema = Joi.object({
 }).required()
 
 export default class JenkinsTests extends JenkinsBase {
-  static category = 'build'
-
+  static category = 'test-results'
   static route = {
     base: 'jenkins',
     pattern: 'tests',
@@ -117,7 +116,9 @@ export default class JenkinsTests extends JenkinsBase {
     const json = await this.fetch({
       url: buildUrl({ jobUrl }),
       schema,
-      qs: buildTreeParamQueryString('actions[failCount,skipCount,totalCount]'),
+      searchParams: buildTreeParamQueryString(
+        'actions[failCount,skipCount,totalCount]'
+      ),
     })
     const { passed, failed, skipped, total } = this.transform({ json })
     return this.constructor.render({

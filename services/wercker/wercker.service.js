@@ -42,14 +42,14 @@ export default class Wercker extends BaseJsonService {
 
   static examples = [
     {
-      title: `Wercker CI Run`,
+      title: 'Wercker CI Run',
       pattern: 'ci/:applicationId',
       namedParams: { applicationId: '559e33c8e982fc615500b357' },
       staticPreview: this.render({ result: 'passed' }),
       documentation: werckerCIDocumentation,
     },
     {
-      title: `Wercker CI Run`,
+      title: 'Wercker CI Run (branch)',
       pattern: 'ci/:applicationId/:branch',
       namedParams: {
         applicationId: '559e33c8e982fc615500b357',
@@ -59,7 +59,7 @@ export default class Wercker extends BaseJsonService {
       documentation: werckerCIDocumentation,
     },
     {
-      title: `Wercker Build`,
+      title: 'Wercker Build',
       pattern: 'build/:userName/:applicationName',
       namedParams: {
         userName: 'wercker',
@@ -68,7 +68,7 @@ export default class Wercker extends BaseJsonService {
       staticPreview: this.render({ result: 'passed' }),
     },
     {
-      title: `Wercker Build branch`,
+      title: 'Wercker Build (branch)',
       pattern: 'build/:userName/:applicationName/:branch',
       namedParams: {
         userName: 'wercker',
@@ -93,19 +93,19 @@ export default class Wercker extends BaseJsonService {
 
   async fetch({ projectId, applicationName, branch }) {
     let url
-    const qs = { branch, limit: 1 }
+    const searchParams = { branch, limit: 1 }
 
     if (applicationName) {
       url = `https://app.wercker.com/api/v3/applications/${applicationName}/builds`
     } else {
       url = 'https://app.wercker.com/api/v3/runs'
-      qs.applicationId = projectId
+      searchParams.applicationId = projectId
     }
 
     return this._requestJson({
       schema: werckerSchema,
       url,
-      options: { qs },
+      options: { searchParams },
       errorMessages: {
         401: 'private application not supported',
         404: 'application not found',

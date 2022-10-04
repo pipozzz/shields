@@ -58,7 +58,7 @@ The tests are also divided into several parts:
 [redis-token-persistence.integration]: https://github.com/badges/shields/blob/master/core/token-pooling/redis-token-persistence.integration.js
 [github-api-provider.integration]: https://github.com/badges/shields/blob/master/services/github/github-api-provider.integration.js
 
-Our goal is for the core code is to reach 100% coverage of the code in the
+Our goal is to reach 100% coverage of the code in the
 frontend, core, and service helper functions when the unit and functional
 tests are run.
 
@@ -95,8 +95,8 @@ test this kind of logic through unit tests (e.g. of `render()` and
     callback with the four parameters `( queryParams, match, end, ask )` which
     is created in a legacy helper function in
     [`legacy-request-handler.js`][legacy-request-handler]. This callback
-    delegates to a callback in `BaseService.register` with four different
-    parameters `( queryParams, match, sendBadge, request )`, which
+    delegates to a callback in `BaseService.register` with three different
+    parameters `( queryParams, match, sendBadge )`, which
     then runs `BaseService.invoke`. `BaseService.invoke` instantiates the
     service and runs `BaseService#handle`.
 
@@ -129,12 +129,12 @@ test this kind of logic through unit tests (e.g. of `render()` and
     handle unresponsive service code and the next callback is invoked: the
     legacy handler function.
 3.  The legacy handler function receives
-    `( queryParams, match, sendBadge, request )`. Its job is to extract data
-    from the regex `match` and `queryParams`, invoke `request` to fetch
-    whatever data it needs, and then invoke `sendBadge` with the result.
+    `( queryParams, match, sendBadge )`. Its job is to extract data
+    from the regex `match` and `queryParams`, and then invoke `sendBadge`
+    with the result.
 4.  The implementation of this function is in `BaseService.register`. It
     works by running `BaseService.invoke`, which instantiates the service,
-    injects more dependencies, and invokes `BaseService#handle` which is
+    injects more dependencies, and invokes `BaseService.handle` which is
     implemented by the service subclass.
 5.  The job of `handle()`, which should be implemented by each service
     subclass, is to return an object which partially describes a badge or

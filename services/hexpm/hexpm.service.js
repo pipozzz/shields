@@ -1,6 +1,7 @@
 import Joi from 'joi'
-import { metric, addv, maybePluralize } from '../text-formatters.js'
-import { downloadCount, version as versionColor } from '../color-formatters.js'
+import { renderDownloadsBadge } from '../downloads.js'
+import { maybePluralize } from '../text-formatters.js'
+import { renderVersionBadge } from '../version.js'
 import { BaseJsonService } from '../index.js'
 
 const hexSchema = Joi.object({
@@ -13,7 +14,8 @@ const hexSchema = Joi.object({
   meta: Joi.object({
     licenses: Joi.array().required(),
   }).required(),
-  latest_stable_version: Joi.string().required(),
+  latest_stable_version: Joi.string(),
+  latest_version: Joi.string().required(),
 }).required()
 
 class BaseHexPmService extends BaseJsonService {
@@ -83,33 +85,34 @@ class HexPmVersion extends BaseHexPmService {
   ]
 
   static render({ version }) {
-    return { message: addv(version), color: versionColor(version) }
+    return renderVersionBadge({ version })
   }
 
   async handle({ packageName }) {
     const json = await this.fetch({ packageName })
-    return this.constructor.render({ version: json.latest_stable_version })
+    return this.constructor.render({
+      version: json.latest_stable_version || json.latest_version,
+    })
   }
 }
 
-function DownloadsForInterval(interval) {
-  const { base, messageSuffix, name } = {
+function DownloadsForInterval(downloadInterval) {
+  const { base, interval, name } = {
     day: {
       base: 'hexpm/dd',
-      messageSuffix: '/day',
+      interval: 'day',
       name: 'HexPmDownloadsDay',
     },
     week: {
       base: 'hexpm/dw',
-      messageSuffix: '/week',
+      interval: 'week',
       name: 'HexPmDownloadsWeek',
     },
     all: {
       base: 'hexpm/dt',
-      messageSuffix: '',
       name: 'HexPmDownloadsTotal',
     },
-  }[interval]
+  }[downloadInterval]
 
   return class HexPmDownloads extends BaseHexPmService {
     static name = name
@@ -125,22 +128,16 @@ function DownloadsForInterval(interval) {
       {
         title: 'Hex.pm',
         namedParams: { packageName: 'plug' },
-        staticPreview: this.render({ downloads: 85000 }),
+        staticPreview: renderDownloadsBadge({ downloads: 85000 }),
       },
     ]
 
     static defaultBadgeData = { label: 'downloads' }
 
-    static render({ downloads }) {
-      return {
-        message: `${metric(downloads)}${messageSuffix}`,
-        color: downloadCount(downloads),
-      }
-    }
-
     async handle({ packageName }) {
       const json = await this.fetch({ packageName })
-      return this.constructor.render({ downloads: json.downloads[interval] })
+      const downloads = json.downloads[downloadInterval]
+      return renderDownloadsBadge({ downloads, interval })
     }
   }
 }

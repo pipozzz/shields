@@ -1,7 +1,8 @@
 import Joi from 'joi'
 import prettyBytes from 'pretty-bytes'
+import { renderDownloadsBadge } from '../downloads.js'
 import { metric, formatDate } from '../text-formatters.js'
-import { age as ageColor, downloadCount } from '../color-formatters.js'
+import { age as ageColor } from '../color-formatters.js'
 import { NotFound } from '../index.js'
 import BaseSteamAPI from './steam-base.js'
 
@@ -204,7 +205,7 @@ class SteamFileSize extends SteamFileService {
   }
 
   static render({ fileSize }) {
-    return { message: prettyBytes(fileSize), color: 'brightgreen' }
+    return { message: prettyBytes(fileSize), color: 'informational' }
   }
 
   async onRequest({ response }) {
@@ -350,23 +351,15 @@ class SteamFileDownloads extends SteamFileService {
     {
       title: 'Steam Downloads',
       namedParams: { fileId: '100' },
-      staticPreview: this.render({ downloads: 20124 }),
+      staticPreview: renderDownloadsBadge({ downloads: 20124 }),
       documentation,
     },
   ]
 
-  static defaultBadgeData = {
-    label: 'downloads',
-  }
+  static defaultBadgeData = { label: 'downloads' }
 
-  static render({ downloads }) {
-    return { message: metric(downloads), color: downloadCount(downloads) }
-  }
-
-  async onRequest({ response }) {
-    return this.constructor.render({
-      downloads: response.lifetime_subscriptions,
-    })
+  async onRequest({ response: { lifetime_subscriptions: downloads } }) {
+    return renderDownloadsBadge({ downloads })
   }
 }
 

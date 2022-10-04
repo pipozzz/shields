@@ -1,7 +1,6 @@
 import Joi from 'joi'
-import moment from 'moment'
-import { metric } from '../text-formatters.js'
-import { downloadCount } from '../color-formatters.js'
+import dayjs from 'dayjs'
+import { renderDownloadsBadge } from '../downloads.js'
 import { nonNegativeInteger } from '../validators.js'
 import { BaseJsonService } from '../index.js'
 
@@ -12,20 +11,19 @@ const schema = Joi.object({
 const intervalMap = {
   dd: {
     startDate: endDate => endDate,
-    suffix: '/day',
+    interval: 'day',
   },
   dw: {
     // 6 days, since date range is inclusive,
-    startDate: endDate => moment(endDate).subtract(6, 'days'),
-    suffix: '/week',
+    startDate: endDate => dayjs(endDate).subtract(6, 'days'),
+    interval: 'week',
   },
   dm: {
-    startDate: endDate => moment(endDate).subtract(30, 'days'),
-    suffix: '/month',
+    startDate: endDate => dayjs(endDate).subtract(30, 'days'),
+    interval: 'month',
   },
   dt: {
-    startDate: () => moment(0),
-    suffix: '',
+    startDate: () => dayjs(0),
   },
 }
 
@@ -68,11 +66,11 @@ export default class Sourceforge extends BaseJsonService {
   static defaultBadgeData = { label: 'sourceforge' }
 
   static render({ downloads, interval }) {
-    return {
-      label: 'downloads',
-      message: `${metric(downloads)}${intervalMap[interval].suffix}`,
-      color: downloadCount(downloads),
-    }
+    return renderDownloadsBadge({
+      downloads,
+      labelOverride: 'downloads',
+      interval: intervalMap[interval].interval,
+    })
   }
 
   async fetch({ interval, project, folder }) {
@@ -80,10 +78,10 @@ export default class Sourceforge extends BaseJsonService {
       folder ? `${folder}/` : ''
     }stats/json`
     // get yesterday since today is incomplete
-    const endDate = moment().subtract(24, 'hours')
+    const endDate = dayjs().subtract(24, 'hours')
     const startDate = intervalMap[interval].startDate(endDate)
     const options = {
-      qs: {
+      searchParams: {
         start_date: startDate.format('YYYY-MM-DD'),
         end_date: endDate.format('YYYY-MM-DD'),
       },
@@ -100,7 +98,7 @@ export default class Sourceforge extends BaseJsonService {
   }
 
   async handle({ interval, project, folder }) {
-    const json = await this.fetch({ interval, project, folder })
-    return this.constructor.render({ interval, downloads: json.total })
+    const { total: downloads } = await this.fetch({ interval, project, folder })
+    return this.constructor.render({ interval, downloads })
   }
 }

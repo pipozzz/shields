@@ -39,10 +39,10 @@ export default class TwitchBase extends BaseJsonService {
         { userKey: 'client_id', passKey: 'client_secret' },
         {
           schema: tokenSchema,
-          url: `https://id.twitch.tv/oauth2/token`,
+          url: 'https://id.twitch.tv/oauth2/token',
           options: {
             method: 'POST',
-            qs: {
+            searchParams: {
               grant_type: 'client_credentials',
             },
           },

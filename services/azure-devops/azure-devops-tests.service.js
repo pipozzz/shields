@@ -61,8 +61,7 @@ const buildTestResultSummarySchema = Joi.object({
 }).required()
 
 export default class AzureDevOpsTests extends AzureDevOpsBase {
-  static category = 'build'
-
+  static category = 'test-results'
   static route = {
     base: 'azure-devops/tests',
     pattern: ':organization/:project/:definitionId/:branch*',
@@ -161,7 +160,7 @@ export default class AzureDevOpsTests extends AzureDevOpsBase {
     return await this.fetch({
       url: `https://dev.azure.com/${organization}/${project}/_apis/test/ResultSummaryByBuild`,
       options: {
-        qs: { buildId },
+        searchParams: { buildId },
       },
       schema: buildTestResultSummarySchema,
       errorMessages,

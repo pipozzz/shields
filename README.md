@@ -35,7 +35,7 @@ and legible badges in SVG and raster format, which can easily be included in
 GitHub readmes or any other web page. The service supports dozens of
 continuous integration services, package registries, distributions, app
 stores, social networks, code coverage services, and code analysis services.
-Every month it serves over 770 million images and is used by some of the
+Every month it serves over 870 million images and is used by some of the
 world's most popular open-source projects, [VS Code][vscode], [Vue.js][vue]
 and [Bootstrap][bootstrap] to name a few.
 
@@ -101,8 +101,8 @@ You can read a [tutorial on how to add a badge][tutorial].
 
 ## Development
 
-1. Install Node 14 or later. You can use the [package manager][] of your choice.
-   Tests need to pass in Node 14 and 16.
+1. Install Node 16 or later. You can use the [package manager][] of your choice.
+   Tests need to pass in Node 16 and 17.
 2. Clone this repository.
 3. Run `npm ci` to install the dependencies.
 4. Run `npm start` to start the badge server and the frontend dev server.

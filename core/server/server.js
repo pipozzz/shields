@@ -6,7 +6,6 @@ import path from 'path'
 import url, { fileURLToPath } from 'url'
 import { bootstrap } from 'global-agent'
 import cloudflareMiddleware from 'cloudflare-middleware'
-import bytes from 'bytes'
 import Camp from '@shields_io/camp'
 import originalJoi from 'joi'
 import makeBadge from '../../badge-maker/lib/make-badge.js'
@@ -16,9 +15,9 @@ import { setRoutes } from '../../services/suggest.js'
 import { loadServiceClasses } from '../base-service/loader.js'
 import { makeSend } from '../base-service/legacy-result-sender.js'
 import { handleRequest } from '../base-service/legacy-request-handler.js'
-import { clearRegularUpdateCache } from '../legacy/regular-update.js'
+import { clearResourceCache } from '../base-service/resource-cache.js'
 import { rasterRedirectUrl } from '../badge-urls/make-badge-url.js'
-import { nonNegativeInteger } from '../../services/validators.js'
+import { fileSize, nonNegativeInteger } from '../../services/validators.js'
 import log from './log.js'
 import PrometheusMetrics from './prometheus-metrics.js'
 import InfluxMetrics from './influx-metrics.js'
@@ -143,7 +142,8 @@ const publicConfigSchema = Joi.object({
   }).required(),
   cacheHeaders: { defaultCacheLengthSeconds: nonNegativeInteger },
   handleInternalErrors: Joi.boolean().required(),
-  fetchLimit: Joi.string().regex(/^[0-9]+(b|kb|mb|gb|tb)$/i),
+  fetchLimit: fileSize,
+  userAgentBase: Joi.string().required(),
   requestTimeoutSeconds: nonNegativeInteger,
   requestTimeoutMaxAgeSeconds: nonNegativeInteger,
   documentRoot: Joi.string().default(
@@ -199,6 +199,14 @@ const privateMetricsInfluxConfigSchema = privateConfigSchema.append({
 
 function addHandlerAtIndex(camp, index, handlerFn) {
   camp.stack.splice(index, 0, handlerFn)
+}
+
+function isOnHeroku() {
+  return !!process.env.DYNO
+}
+
+function isOnFly() {
+  return !!process.env.FLY_APP_NAME
 }
 
 /**
@@ -301,13 +309,21 @@ class Server {
     // Set `req.ip`, which is expected by `cloudflareMiddleware()`. This is set
     // by Express but not Scoutcamp.
     addHandlerAtIndex(this.camp, 0, function (req, res, next) {
-      // On Heroku, `req.socket.remoteAddress` is the Heroku router. However,
-      // the router ensures that the last item in the `X-Forwarded-For` header
-      // is the real origin.
-      // https://stackoverflow.com/a/18517550/893113
-      req.ip = process.env.DYNO
-        ? req.headers['x-forwarded-for'].split(', ').pop()
-        : req.socket.remoteAddress
+      if (isOnHeroku()) {
+        // On Heroku, `req.socket.remoteAddress` is the Heroku router. However,
+        // the router ensures that the last item in the `X-Forwarded-For` header
+        // is the real origin.
+        // https://stackoverflow.com/a/18517550/893113
+        req.ip = req.headers['x-forwarded-for'].split(', ').pop()
+      } else if (isOnFly()) {
+        // On Fly we can use the Fly-Client-IP header
+        // https://fly.io/docs/reference/runtime-environment/#request-headers
+        req.ip = req.headers['fly-client-ip']
+          ? req.headers['fly-client-ip']
+          : req.socket.remoteAddress
+      } else {
+        req.ip = req.socket.remoteAddress
+      }
       next()
     })
     addHandlerAtIndex(this.camp, 1, cloudflareMiddleware())
@@ -433,7 +449,6 @@ class Server {
         {
           handleInternalErrors: config.public.handleInternalErrors,
           cacheHeaders: config.public.cacheHeaders,
-          fetchLimitBytes: bytes(config.public.fetchLimit),
           rasterUrl: config.public.rasterUrl,
           private: config.private,
           public: config.public,
@@ -507,6 +522,12 @@ class Server {
     const { apiProvider: githubApiProvider } = this.githubConstellation
     setRoutes(allowedOrigin, githubApiProvider, camp)
 
+    // https://github.com/badges/shields/issues/3273
+    camp.handle((req, res, next) => {
+      res.setHeader('Access-Control-Allow-Origin', '*')
+      next()
+    })
+
     this.registerErrorHandlers()
     this.registerRedirects()
     await this.registerServices()
@@ -532,7 +553,7 @@ class Server {
   static resetGlobalState() {
     // This state should be migrated to instance state. When possible, do not add new
     // global state.
-    clearRegularUpdateCache()
+    clearResourceCache()
   }
 
   reset() {

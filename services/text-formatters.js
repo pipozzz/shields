@@ -2,8 +2,11 @@
  * Commonly-used functions for formatting text in badge labels. Includes
  * ordinal numbers, currency codes, star ratings, versions, etc.
  */
-import moment from 'moment'
-moment().format()
+import dayjs from 'dayjs'
+import calendar from 'dayjs/plugin/calendar.js'
+import relativeTime from 'dayjs/plugin/relativeTime.js'
+dayjs.extend(calendar)
+dayjs.extend(relativeTime)
 
 function starRating(rating, max = 5) {
   const flooredRating = Math.floor(rating)
@@ -46,27 +49,31 @@ function ordinalNumber(n) {
   return n + (s[(v - 20) % 10] || s[v] || s[0])
 }
 
-// Given a number, string with appropriate unit in the metric system, SI.
+// Given a number (positive or negative), string with appropriate unit in the metric system, SI.
 // Note: numbers beyond the peta- cannot be represented as integers in JS.
 const metricPrefix = ['k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
 const metricPower = metricPrefix.map((a, i) => Math.pow(1000, i + 1))
 function metric(n) {
   for (let i = metricPrefix.length - 1; i >= 0; i--) {
     const limit = metricPower[i]
-    if (n >= limit) {
-      const scaledN = n / limit
+    const absN = Math.abs(n)
+    if (absN >= limit) {
+      const scaledN = absN / limit
       if (scaledN < 10) {
         // For "small" numbers, display one decimal digit unless it is 0.
         const oneDecimalN = scaledN.toFixed(1)
         if (oneDecimalN.charAt(oneDecimalN.length - 1) !== '0') {
-          return `${oneDecimalN}${metricPrefix[i]}`
+          const res = `${oneDecimalN}${metricPrefix[i]}`
+          return n > 0 ? res : `-${res}`
         }
       }
       const roundedN = Math.round(scaledN)
       if (roundedN < 1000) {
-        return `${roundedN}${metricPrefix[i]}`
+        const res = `${roundedN}${metricPrefix[i]}`
+        return n > 0 ? res : `-${res}`
       } else {
-        return `1${metricPrefix[i + 1]}`
+        const res = `1${metricPrefix[i + 1]}`
+        return n > 0 ? res : `-${res}`
       }
     }
   }
@@ -105,7 +112,7 @@ function maybePluralize(singular, countable, plural) {
 }
 
 function formatDate(d) {
-  const date = moment(d)
+  const date = dayjs(d)
   const dateString = date.calendar(null, {
     lastDay: '[yesterday]',
     sameDay: '[today]',
@@ -113,12 +120,12 @@ function formatDate(d) {
     sameElse: 'MMMM YYYY',
   })
   // Trim current year from date string
-  return dateString.replace(` ${moment().year()}`, '').toLowerCase()
+  return dateString.replace(` ${dayjs().year()}`, '').toLowerCase()
 }
 
 function formatRelativeDate(timestamp) {
-  return moment()
-    .to(moment.unix(parseInt(timestamp, 10)))
+  return dayjs()
+    .to(dayjs.unix(parseInt(timestamp, 10)))
     .toLowerCase()
 }
 

@@ -2,21 +2,15 @@ import gql from 'graphql-tag'
 import { mergeQueries } from '../../core/base-service/graphql.js'
 import { BaseGraphqlService, BaseJsonService } from '../index.js'
 
-function createRequestFetcher(context, config) {
-  const { sendAndCacheRequestWithCallbacks, githubApiProvider } = context
-
-  return async (url, options) =>
-    githubApiProvider.requestAsPromise(
-      sendAndCacheRequestWithCallbacks,
-      url,
-      options
-    )
+function createRequestFetcher(context) {
+  const { requestFetcher, githubApiProvider } = context
+  return githubApiProvider.fetch.bind(githubApiProvider, requestFetcher)
 }
 
 class GithubAuthV3Service extends BaseJsonService {
   constructor(context, config) {
     super(context, config)
-    this._requestFetcher = createRequestFetcher(context, config)
+    this._requestFetcher = createRequestFetcher(context)
     this.staticAuthConfigured = true
   }
 }
@@ -30,7 +24,7 @@ class ConditionalGithubAuthV3Service extends BaseJsonService {
   constructor(context, config) {
     super(context, config)
     if (context.githubApiProvider.globalToken) {
-      this._requestFetcher = createRequestFetcher(context, config)
+      this._requestFetcher = createRequestFetcher(context)
       this.staticAuthConfigured = true
     } else {
       this.staticAuthConfigured = false
@@ -41,12 +35,12 @@ class ConditionalGithubAuthV3Service extends BaseJsonService {
 class GithubAuthV4Service extends BaseGraphqlService {
   constructor(context, config) {
     super(context, config)
-    this._requestFetcher = createRequestFetcher(context, config)
+    this._requestFetcher = createRequestFetcher(context)
     this.staticAuthConfigured = true
   }
 
   async _requestGraphql(attrs) {
-    const url = `/graphql`
+    const url = '/graphql'
 
     /*
     The Github v4 API requires us to query the rateLimit object to return

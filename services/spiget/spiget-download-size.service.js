@@ -11,9 +11,7 @@ export default class SpigetDownloadSize extends BaseSpigetService {
   static examples = [
     {
       title: 'Spiget Download Size',
-      namedParams: {
-        resourceId: '9089',
-      },
+      namedParams: { resourceId: '15904' },
       staticPreview: this.render({ size: 2.5, unit: 'MB' }),
       documentation,
       keywords,
@@ -28,7 +26,7 @@ export default class SpigetDownloadSize extends BaseSpigetService {
   static render({ size, unit, type }) {
     if (type === 'external') {
       return {
-        message: `resource hosted externally`,
+        message: 'resource hosted externally',
         color: 'lightgrey',
       }
     }

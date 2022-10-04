@@ -43,7 +43,7 @@ const isVPlusDottedVersionNClausesWithOptionalSuffixAndEpoch = withRegex(
 // https://getcomposer.org/doc/04-schema.md#package-links
 // https://getcomposer.org/doc/04-schema.md#minimum-stability
 const isComposerVersion = withRegex(
-  /^\s*(>=|>|<|<=|!=|\^|~)?\d+(\.(\*|(\d+(\.(\d+|\*))?)))?((\s*\|\|)?\s*(>=|>|<|<=|!=|\^|~)?\d+(\.(\*|(\d+(\.(\d+|\*))?)))?)*\s*$/
+  /^\*|(\s*(>=|>|<|<=|!=|\^|~)?\d+(\.(\*|(\d+(\.(\d+|\*))?)))?((\s*\|*)?\s*(>=|>|<|<=|!=|\^|~)?\d+(\.(\*|(\d+(\.(\d+|\*))?)))?)*\s*)$/
 )
 
 // Regex for validate php-version.versionReduction()
@@ -62,6 +62,11 @@ const isStarRating = withRegex(
 // Required to be > 0, because accepting zero masks many problems.
 const isMetric = withRegex(/^([1-9][0-9]*[kMGTPEZY]?|[1-9]\.[1-9][kMGTPEZY])$/)
 
+// Same as isMetric, but tests for negative numbers also.
+const isMetricAllowNegative = withRegex(
+  /^(0|-?[1-9][0-9]*[kMGTPEZY]?|-?[0-9]\.[0-9][kMGTPEZY])$/
+)
+
 /**
  * @param {RegExp} nestedRegexp Pattern that must appear after the metric.
  * @returns {Function} A function that returns a RegExp that matches a metric followed by another pattern.
@@ -73,6 +78,8 @@ const isMetricWithPattern = nestedRegexp => {
 }
 
 const isMetricOpenIssues = isMetricWithPattern(/ open/)
+
+const isMetricClosedIssues = isMetricWithPattern(/ closed/)
 
 const isMetricOverMetric = isMetricWithPattern(
   /\/([1-9][0-9]*[kMGTPEZY]?|[1-9]\.[1-9][kMGTPEZY])/
@@ -159,8 +166,10 @@ export {
   isPhpVersionReduction,
   isStarRating,
   isMetric,
+  isMetricAllowNegative,
   isMetricWithPattern,
   isMetricOpenIssues,
+  isMetricClosedIssues,
   isMetricOverMetric,
   isMetricOverTimePeriod,
   isZeroOverTimePeriod,
