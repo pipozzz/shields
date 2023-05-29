@@ -4,6 +4,111 @@ Note: this changelog is for the shields.io server. The changelog for the badge-m
 
 ---
 
+## server-2023-05-01
+
+** Removal:** For users who need to maintain a Github Token pool, storage has been provided via the `RedisTokenPersistence` and `REDIS_URL` settings. This feature was deprecated in `server-2023-03-01`. As of this release, the `RedisTokenPersistence` backend is now removed. If you are using this feature, you will need to migrate to using the `SQLTokenPersistence` backend for storage and provide a postgres connection string via the `POSTGRES_URL` setting. [#8922](https://github.com/badges/shields/issues/8922)
+
+- fail to start server if there are duplicate service names [#9099](https://github.com/badges/shields/issues/9099)
+- [SourceForge] Added badges for SourceForge [#9078](https://github.com/badges/shields/issues/9078) [#9102](https://github.com/badges/shields/issues/9102)
+- crates: Use `?include=` to reduce crates.io backend load [#9081](https://github.com/badges/shields/issues/9081)
+- Dependency updates
+
+## server-2023-04-02
+
+- [JenkinsCoverage] Update Jenkins Code Coverage API for new plugin version [#9010](https://github.com/badges/shields/issues/9010)
+- [CTAN] fallback to date if version is empty [#9036](https://github.com/badges/shields/issues/9036)
+- Update to [CTAN] API version 2.0 [#9016](https://github.com/badges/shields/issues/9016)
+- handle missing statistics array in [VisualStudioMarketplace] badges [#8985](https://github.com/badges/shields/issues/8985)
+- [Netlify] upgrade colors for SVG parsing [#8971](https://github.com/badges/shields/issues/8971)
+- Fix [Vcpkg] version service for different version fields [#8945](https://github.com/badges/shields/issues/8945)
+- only try to close pool if one exists [#8947](https://github.com/badges/shields/issues/8947)
+- misc minor fixes to [githubsize node pypi] [#8946](https://github.com/badges/shields/issues/8946)
+- Dependency updates
+
+## server-2023-03-01
+
+**Deprecation:** For users who need to maintain a Github Token pool, storage has been provided via the `RedisTokenPersistence` and `REDIS_URL` settings. As of this release, the `RedisTokenPersistence` backend is now deprecated and will be removed in a future release. If you are using this feature, you will need to migrate to using the `SQLTokenPersistence` backend for storage and provide a postgres connection string via the `POSTGRES_URL` setting. [#8922](https://github.com/badges/shields/issues/8922)
+
+- fix: for crates.io versions, use max_stable_version if it exists [#8687](https://github.com/badges/shields/issues/8687)
+- don't autofocus search [#8927](https://github.com/badges/shields/issues/8927)
+- Add [Vcpkg] version service [#8923](https://github.com/badges/shields/issues/8923)
+- fix: Set uid/gid in docker image to 0 [#8908](https://github.com/badges/shields/issues/8908)
+- expose port 443 in Dockerfile [#8889](https://github.com/badges/shields/issues/8889)
+- Dependency updates
+
+## server-2023-02-01
+
+- replace [twitter] badge with static fallback [#8842](https://github.com/badges/shields/issues/8842)
+- Add various [Polymart] badges [#8811](https://github.com/badges/shields/issues/8811)
+- update [githubpipenv] tests/examples [#8797](https://github.com/badges/shields/issues/8797)
+- deprecate [apm] service [#8773](https://github.com/badges/shields/issues/8773)
+- deprecate lgtm [#8771](https://github.com/badges/shields/issues/8771)
+- Dependency updates
+
+## server-2023-01-01
+
+- Breaking change: Routes for GitHub workflows badge have changed. See https://github.com/badges/shields/issues/8671 for more details
+- Behaviour change: In this release we fixed a long standing bug. GitHub badges were previously not reading the base URL from the `config.service.baseUri`.
+  This release fixes that bug, bringing the code into line with the documented behaviour. This should not cause a behaviour change for most users,
+  but users who had previously set a value in `config.service.baseUri` which was previously ignored could see this now have an effect.
+  Users who configure their instance using env vars rather than yaml should see no change.
+- Send `X-GitHub-Api-Version` when calling [GitHub] v3 API [#8669](https://github.com/badges/shields/issues/8669)
+- add [VpmVersion] badge [#8755](https://github.com/badges/shields/issues/8755)
+- Add [modrinth] game versions [#8673](https://github.com/badges/shields/issues/8673)
+- fix debug logging of undefined query params [#8540](https://github.com/badges/shields/issues/8540), [#8757](https://github.com/badges/shields/issues/8757)
+- fall back to classifiers if [pypi] license text is really long [#8690](https://github.com/badges/shields/issues/8690)
+- allow passing key to [stackexchange] [#8539](https://github.com/badges/shields/issues/8539)
+- Dependency updates
+
+## server-2022-12-01
+
+- fix: support logoColor to shield icons. [#8263](https://github.com/badges/shields/issues/8263)
+- handle missing properties array in [VisualStudioMarketplaceVersion] [#8603](https://github.com/badges/shields/issues/8603)
+- deprecate [wercker] service [#8642](https://github.com/badges/shields/issues/8642)
+- Add [Coincap] Cryptocurrency badges [#8623](https://github.com/badges/shields/issues/8623)
+- Add [modrinth] version [#8604](https://github.com/badges/shields/issues/8604)
+- [factorio-mod-portal] services [#8625](https://github.com/badges/shields/issues/8625)
+- [Coveralls] for GitLab [#8584](https://github.com/badges/shields/issues/8584), [#8644](https://github.com/badges/shields/issues/8644)
+- Remove 'suggest badges' feature [#8311](https://github.com/badges/shields/issues/8311)
+- Add [modrinth] followers [#8601](https://github.com/badges/shields/issues/8601)
+- Update the [modrinth] API to v2 [#8600](https://github.com/badges/shields/issues/8600)
+- tidy up [GitHubGist] routes [#8510](https://github.com/badges/shields/issues/8510)
+- fix [flathub] version error handling [#8500](https://github.com/badges/shields/issues/8500)
+- Dependency updates
+
+## server-2022-11-01
+
+- [Ansible] Add collection badge [#8578](https://github.com/badges/shields/issues/8578)
+- [VisualStudioMarketplace] Add support to prerelease extensions version (Issue #8207) [#8561](https://github.com/badges/shields/issues/8561)
+- feat: add [GitlabLastCommit] service [#8508](https://github.com/badges/shields/issues/8508)
+- fix [swagger] service tests (allow 0 items in array) [#8564](https://github.com/badges/shields/issues/8564)
+- fix codecov badge for non-default branch [#8565](https://github.com/badges/shields/issues/8565)
+- Add [GitHubLastCommit] by committer badge [#8537](https://github.com/badges/shields/issues/8537)
+- [GitHubReleaseDate] - published_at field [#8543](https://github.com/badges/shields/issues/8543)
+- Fix [Testspace] with new "untested" value in case_counts array [#8544](https://github.com/badges/shields/issues/8544)
+- fix: Support WAITING status for GitHub deployments [#8521](https://github.com/badges/shields/issues/8521)
+- [Whatpulse] badge for a user and for a team [#8466](https://github.com/badges/shields/issues/8466)
+- deprecate [pkgreview] service [#8499](https://github.com/badges/shields/issues/8499)
+- Dependency updates
+
+## server-2022-10-08
+
+- deprecate [criterion] service [#8501](https://github.com/badges/shields/issues/8501)
+- fix formatRelativeDate error handling; run [date] [#8497](https://github.com/badges/shields/issues/8497)
+- allow/validate bitbucket_username / bitbucket_password in private config schema [#8472](https://github.com/badges/shields/issues/8472)
+- fix [pub] points badge test and example [#8498](https://github.com/badges/shields/issues/8498)
+- feat: add [GitlabLanguageCount] service [#8377](https://github.com/badges/shields/issues/8377)
+- [GitHubGistStars] add GitHub Gist Stars [#8471](https://github.com/badges/shields/issues/8471)
+- fix display/search of CII badge examples [#8473](https://github.com/badges/shields/issues/8473)
+- feat: add 2022 support to GitHub Hacktoberfest [#8468](https://github.com/badges/shields/issues/8468)
+- fix [GitLabCoverage] subgroup bug [#8401](https://github.com/badges/shields/issues/8401)
+- implement ruby gems-specific version sort/color functions [#8434](https://github.com/badges/shields/issues/8434)
+- Add `rc` to pre-release identifiers [#8435](https://github.com/badges/shields/issues/8435)
+- add [GitHub] Number of commits between branches/tags/commits [#8394](https://github.com/badges/shields/issues/8394)
+- add [Packagist] dependency version [#8371](https://github.com/badges/shields/issues/8371)
+- fix Docker build status invalid response data bug [#8392](https://github.com/badges/shields/issues/8392)
+- Dependency updates
+
 ## server-2022-09-04
 
 - fix frontend compile for users running on Windows [#8350](https://github.com/badges/shields/issues/8350)
